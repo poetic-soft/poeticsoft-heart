@@ -1,11 +1,30 @@
 <?xml version="1.0"?>
 <ruleset name="PoeticsoftStandard">
-  <description>Reglas personalizadas para Poeticsoft</description>
+  <description>Reglas personalizadas para Poeticsoft - Rigor sin asfixia</description>
+
   <rule ref="PSR12">
     <exclude name="PSR1.Methods.CamelCapsMethodName.NotCamelCaps" />
+    
+    <exclude name="Squiz.WhiteSpace.SuperfluousWhitespace.MultipleBlankLines" />
+    <exclude name="Generic.WhiteSpace.DisallowMultipleBlankLines.SameLine" />
+
+    <exclude name="PSR12.Files.FileHeader.SpacingAfterDeclaration" />
+    <exclude name="Squiz.WhiteSpace.ControlStructureSpacing.SpacingAfterOpen" />
+    <exclude name="Squiz.WhiteSpace.ControlStructureSpacing.SpacingBeforeClose" />
+    <exclude name="PSR12.Classes.OpeningBraceSpace.SpacingAfter" />
+    
+    <exclude name="Generic.WhiteSpace.ScopeIndent.Incorrect" />
   </rule>
+
+  <rule ref="Squiz.WhiteSpace.SuperfluousWhitespace">
+    <properties>
+      <property name="ignoreBlankLines" value="true" />
+    </properties>
+  </rule>
+
   <exclude-pattern>*/vendor/*</exclude-pattern>
   <exclude-pattern>*/node_modules/*</exclude-pattern>
+
   <arg name="extensions" value="php" />
   <arg name="colors" />
   <arg value="p" />

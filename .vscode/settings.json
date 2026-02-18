@@ -1,0 +1,6 @@
+{
+  "phpcs.executablePath": ".\\poeticsoft-heart\\vendor\\bin\\phpcs.bat",
+  "phpcbf.executablePath": ".\\poeticsoft-heart\\vendor\\bin\\phpcbf.bat",
+  "phpcs.standard": "poeticsoft-heart\\phpcs.xml",
+  "phpcbf.standard": "poeticsoft-heart\\phpcs.xml"
+}

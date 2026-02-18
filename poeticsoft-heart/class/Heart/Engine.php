@@ -5,49 +5,79 @@ namespace Poeticsoft\Heart;
 /**
  * Motor central del ecosistema Poeticsoft.
  *
- * Gestiona el ciclo de vida de los plugins, el logging centralizado
- * y la comunicación entre módulos (Forges).
+ * Gestiona el ciclo de vida de los módulos (Forges), el registro centralizado
+ * de logs y la inicialización de componentes administrativos del núcleo.
  *
  * @package Poeticsoft\Heart
- * @since 0.0.0
+ * @version 1.0.0
+ * @since   2026-02-18
  */
 class Engine
 {
-    /** @var self|null Instancia única (Singleton) */
-    private static $instance = null;
+    /** * @var self|null Almacena la instancia única del motor siguiendo el patrón Singleton.
+     */
+    private static ?self $instance = null;
 
-    /** @var ForgeInterface[] Lista de módulos registrados */
-    private $forges = [];
+    /** * @var ForgeInterface[] Colección de módulos registrados que implementan la interfaz Forge.
+     */
+    private array $forges = [];
 
-    /** @var Admin Instancia del gestor administrativo */
-    protected $admin;
+    /** * @var Admin Controlador del área de administración de WordPress.
+     */
+    protected Admin $admin;
 
-    /** @var string Versión del core */
-    private $version = '0.0.0';
+    /** * @var string Versión actual del núcleo Heart. Inmutable tras la creación.
+     */
+    private readonly string $version;
 
-    /** @var string Ruta al archivo principal del plugin */
-    private $pluginfile;
+    /** * @var string Ruta absoluta al archivo de entrada del plugin (main file).
+     */
+    private readonly string $pluginfile;
 
-    /** @var string Directorio del plugin con slash final */
-    private $path;
+    /** * @var string Directorio raíz del plugin con slash final (trailingslashit).
+     */
+    private readonly string $path;
 
-    /** @var string URL del plugin con slash final */
-    private $url;
+    /** * @var string URL pública del directorio del plugin.
+     */
+    private readonly string $url;
 
-    /** @var string Nombre base del plugin */
-    private $basename;
+    /** * @var string Identificador único de WordPress basado en el path del plugin.
+     */
+    private readonly string $basename;
 
-    /** @var string Ruta completa al archivo de log */
-    private $logfile;
+    /** * @var string Ruta completa al archivo de depuración personalizado del ecosistema.
+     */
+    private readonly string $logfile;
+
+    /** * @var string Token de autenticación global.
+     */
+    private ?string $token = null;
 
     /**
-     * Inicializa el motor principal.
-     *
-     * @param string $pluginfile Ruta absoluta al archivo raíz del plugin.
-     * @return self
-     * @throws \RuntimeException Si se intenta inicializar más de una vez.
+     * Prevenir la clonación del objeto para mantener la integridad del Singleton.
      */
-    public static function boot(string $pluginfile)
+    private function __clone()
+    {
+    }
+
+    /**
+     * Prevenir la deserialización para evitar duplicidad de instancias en memoria.
+     * * @throws \Exception Siempre, para bloquear el uso de unserialize().
+     */
+    public function __wakeup()
+    {
+        throw new \Exception("No se puede deserializar un Singleton.");
+    }
+
+    /**
+     * Punto de entrada principal para arrancar el motor.
+     *
+     * @param string $pluginfile Ruta absoluta (__FILE__) del plugin que invoca el motor.
+     * @return self La instancia única inicializada.
+     * @throws \RuntimeException Si se intenta ejecutar boot() más de una vez.
+     */
+    public static function boot(string $pluginfile): self
     {
         if (null !== self::$instance) {
             throw new \RuntimeException('Engine ya fue inicializado.');
@@ -58,52 +88,50 @@ class Engine
     }
 
     /**
-     * Obtiene la instancia activa del motor.
+     * Acceso global a la instancia del motor.
      *
-     * @return self
-     * @throws \RuntimeException Si se llama antes de boot().
+     * @return self Instancia activa del Engine.
+     * @throws \RuntimeException Si se llama antes de haber ejecutado boot().
      */
-    public static function instance()
+    public static function get_instance(): self
     {
         if (null === self::$instance) {
             throw new \RuntimeException('Engine no ha sido inicializado. Llama a Engine::boot() primero.');
         }
-
         return self::$instance;
     }
 
     /**
-     * Constructor privado para forzar el patrón Singleton.
-     *
-     * @param string $pluginfile
+     * Constructor privado. Configura el entorno y las constantes de ruta.
+     * * @param string $pluginfile
      */
     private function __construct(string $pluginfile)
     {
+        // Configuración inmutable del entorno
+        $this->version = '1.0.0';
         $this->pluginfile = $pluginfile;
-        $this->path       = plugin_dir_path($pluginfile);
-        $this->url        = plugin_dir_url($pluginfile);
-        $this->basename   = plugin_basename($pluginfile);
-        $this->logfile    = WP_CONTENT_DIR . '/poeticsoft-heart-debug.log';
+        $this->path = plugin_dir_path($pluginfile);
+        $this->url = plugin_dir_url($pluginfile);
+        $this->basename = plugin_basename($pluginfile);
+        $this->logfile = WP_CONTENT_DIR . '/poeticsoft-heart-debug.log';
 
-        // Inyectamos el motor en el controlador Admin
+        // Inyección del motor en el controlador administrativo
         $this->admin = new Admin($this);
 
-        // Hooks de inicialización
-        add_action('plugins_loaded', [$this, 'init'], 10);
-        add_action('init', [$this, 'wp_init']);
+        add_action('init', [$this, 'init']);
 
         $this->ensure_log_availability();
     }
 
     /**
-     * Registra un nuevo módulo en el ecosistema.
+     * Registra un nuevo módulo (Forge) en el registro central.
      *
-     * @param string         $id        Identificador único.
-     * @param ForgeInterface $instancia El objeto del módulo.
-     * @return bool
-     * @throws \InvalidArgumentException Si el ID está vacío.
+     * @param string         $id        Identificador único (slug) para el módulo.
+     * @param ForgeInterface $instancia Objeto que cumple el contrato ForgeInterface.
+     * @return bool True si el registro fue exitoso.
+     * @throws \InvalidArgumentException Si el ID proporcionado es inválido.
      */
-    public function registrar_forge(string $id, ForgeInterface $instancia)
+    public function registrar_forge(string $id, ForgeInterface $instancia): bool
     {
         if (empty($id)) {
             throw new \InvalidArgumentException('El ID del módulo no puede estar vacío');
@@ -114,34 +142,46 @@ class Engine
     }
 
     /**
-     * Lanza el proceso de inicialización de todos los módulos.
-     *
-     * @internal Llamado por el hook 'plugins_loaded'.
+     * Dispara la inicialización de todos los módulos registrados.
+     * Ejecuta hooks de acción para permitir extensiones externas.
+     * * @return void
      */
-    public function init()
+    public function init(): void
     {
+        // Hook para que otros plugins registren sus Forges
         do_action('poeticsoft_heart_register', $this);
 
         foreach ($this->forges as $id => $forge) {
+            
             try {
+                
                 $forge->init($this);
+                
             } catch (\Exception $e) {
+                
                 $this->log("Error al inicializar Forge {$id}: {$e->getMessage()}", 'ERROR');
             }
-        }
+        }       
+        
+        load_plugin_textdomain(
+            'poeticsoft-heart',
+            false,
+            dirname($this->basename) . '/languages'
+        );
 
         do_action('poeticsoft_heart_booted', $this);
     }
 
     /**
-     * Registra eventos en el log si WP_DEBUG está habilitado.
+     * Escribe eventos en el archivo de log dedicado del sistema.
+     * Solo actúa si WP_DEBUG está activo para optimizar rendimiento.
      *
-     * @param mixed  $mensaje Datos a guardar.
-     * @param string $nivel   Nivel del log.
-     * @param string $forge   Origen del log.
-     * @return bool
+     * @param mixed  $mensaje Datos a registrar (strings o arrays/objetos).
+     * @param string $nivel   Categoría del log (INFO, ERROR, DEBUG).
+     * @param string $forge   Origen o nombre del módulo que genera el log.
+     * @return bool True si se escribió correctamente.
      */
-    public function log($mensaje, string $nivel = 'INFO', string $forge = 'HEART')
+    public function log($mensaje, string $nivel = 'INFO', string $forge = 'HEART'): bool
     {
         if (!defined('WP_DEBUG') || !WP_DEBUG) {
             return false;
@@ -151,7 +191,6 @@ class Engine
         $fecha = current_time('Y-m-d H:i:s');
         $entrada = "[{$fecha}] [{$nivel}] [{$forge}]: {$text}" . PHP_EOL;
 
-        // Intentamos escribir en nuestro log, si no, al de WP
         if (is_writable(dirname($this->logfile)) || (file_exists($this->logfile) && is_writable($this->logfile))) {
             return (bool) error_log($entrada, 3, $this->logfile);
         }
@@ -161,9 +200,11 @@ class Engine
     }
 
     /**
-     * Asegura que el archivo de log sea accesible.
+     * Verifica y prepara el sistema de archivos para el log.
+     * Crea el archivo y ajusta permisos si es necesario.
+     * * @return void
      */
-    private function ensure_log_availability()
+    private function ensure_log_availability(): void
     {
         $log_dir = dirname($this->logfile);
         if (is_writable($log_dir)) {
@@ -176,59 +217,78 @@ class Engine
         }
     }
 
-    /**
-     * Getters básicos
-     */
-    public function get_version()
+    /** @return string Versión del core. */
+    public function get_version(): string
     {
         return $this->version;
     }
-    public function get_logfile()
+
+    /** @return string Ruta del archivo log. */
+    public function get_logfile(): string
     {
         return $this->logfile;
     }
-    public function get_forges()
+
+    /** @return ForgeInterface[] Listado de módulos. */
+    public function get_forges(): array
     {
         return $this->forges;
     }
 
-    public function wp_init()
+    /** @return string Basename del plugin. */
+    public function get_basename(): string
     {
-        load_plugin_textdomain(
-            'poeticsoft-heart',
-            false,
-            dirname($this->basename) . '/languages'
-        );
+        return $this->basename;
+    }
+    
+    /**
+     * Obtiene el token de seguridad centralizado cuando se solicita por primera vez.
+     * * @return string
+     */
+    public function get_token(): string
+    {
+        if (null === $this->token) {
+            
+            $this->token = wp_create_nonce('poeticsoft_heart_token');
+        }
+
+        return $this->token;
     }
 
-    public static function activate()
+    /** Acciones de activación de WordPress. */
+    public static function activate(): void
     {
         wp_cache_flush();
     }
-    public static function deactivate()
+
+    /** Acciones de desactivación de WordPress. */
+    public static function deactivate(): void
     {
         wp_cache_flush();
     }
 
     /**
-     * Limpieza al desinstalar.
+     * Limpieza profunda del sistema durante la desinstalación.
+     * Elimina logs y backups generados por el ecosistema.
      */
-    public static function uninstall()
+    public static function uninstall(): void
     {
-        // Al ser estático, no podemos usar $this->logfile, usamos instance()
-        $instance = self::instance();
-        $logfile = $instance->get_logfile();
+        try {
+            // Acceso seguro a la instancia para obtener rutas
+            $instance = self::get_instance();
+            $logfile = $instance->get_logfile();
 
-        if (file_exists($logfile)) {
-            @unlink($logfile);
-
-            // Borrar backups .bak
-            $backups = glob($logfile . '.*.bak');
-            if (is_array($backups)) {
-                foreach ($backups as $file) {
-                    @unlink($file);
+            if (file_exists($logfile)) {
+                @unlink($logfile);
+                $backups = glob($logfile . '.*.bak');
+                if (is_array($backups)) {
+                    foreach ($backups as $file) {
+                        @unlink($file);
+                    }
                 }
             }
+        } catch (\Exception $e) {
+            // Silenciar si el motor no estaba cargado durante la desinstalación
         }
 
         wp_cache_flush();

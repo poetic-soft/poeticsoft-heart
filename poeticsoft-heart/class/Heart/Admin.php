@@ -36,7 +36,10 @@ class Admin
         );
 
         // Hook para mostrar el panel de diagnóstico si se solicita
-        add_action('admin_notices', [Inspector::class, 'render_diagnostic_panel']);
+        add_action(
+            'admin_notices',
+            [Inspector::class, 'render_diagnostic_panel']
+        );
 
         // Aquí podrías añadir más hooks administrativos
         // add_action('admin_menu', [$this, 'add_admin_menu']);

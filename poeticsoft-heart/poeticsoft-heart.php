@@ -15,6 +15,11 @@
  * Domain Path: /languages
  */
 
+/**
+ * Update composer classmap
+ * composer dump-autoload -o
+ */
+
 namespace Poeticsoft;
 
 use Poeticsoft\Heart\Engine;
