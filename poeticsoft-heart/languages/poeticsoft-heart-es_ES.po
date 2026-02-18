@@ -1,0 +1,94 @@
+# Spanish (Spain) Translation for Poeticsoft Heart
+# Copyright (C) 2026 Poeticsoft Team
+# This file is distributed under the MIT License.
+msgid ""
+msgstr ""
+"Project-Id-Version: Poeticsoft Heart 0.0.0\n"
+"Report-Msgid-Bugs-To: alberto@poeticsoft.com\n"
+"POT-Creation-Date: 2026-02-12 00:00+0000\n"
+"PO-Revision-Date: 2026-02-12 00:00+0000\n"
+"Last-Translator: Poeticsoft Team <alberto@poeticsoft.com>\n"
+"Language-Team: Spanish <es@li.org>\n"
+"Language: es_ES\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: class/Heart/Engine.php
+msgid "El ID del módulo debe ser una cadena no vacía"
+msgstr "El ID del módulo debe ser una cadena no vacía"
+
+msgid "El módulo \"%s\" ya está registrado. Se sobrescribirá."
+msgstr "El módulo \"%s\" ya está registrado. Se sobrescribirá."
+
+msgid "Módulo \"%s\" registrado correctamente"
+msgstr "Módulo \"%s\" registrado correctamente"
+
+msgid "Módulo \"%s\" inicializado"
+msgstr "Módulo \"%s\" inicializado"
+
+msgid "Error al inicializar módulo \"%s\": %s"
+msgstr "Error al inicializar módulo \"%s\": %s"
+
+msgid "Poeticsoft Heart: No se puede escribir en el directorio de logs: %s"
+msgstr "Poeticsoft Heart: No se puede escribir en el directorio de logs: %s"
+
+msgid "Plugin Poeticsoft Heart v%s activado"
+msgstr "Plugin Poeticsoft Heart v%s activado"
+
+msgid "Plugin Poeticsoft Heart v%s desactivado"
+msgstr "Plugin Poeticsoft Heart v%s desactivado"
+
+#: class/Heart/Inspector.php
+msgid "Clase Engine"
+msgstr "Clase Engine"
+
+msgid "Singleton (Instancia Única)"
+msgstr "Singleton (Instancia Única)"
+
+msgid "Helpers Globales"
+msgstr "Helpers Globales"
+
+msgid "Escritura de Log"
+msgstr "Escritura de Log"
+
+msgid "Versión PHP"
+msgstr "Versión PHP"
+
+msgid "Versión WordPress"
+msgstr "Versión WordPress"
+
+msgid "Módulos Registrados"
+msgstr "Módulos Registrados"
+
+msgid "WP_DEBUG"
+msgstr "WP_DEBUG"
+
+#: class/functions.php
+msgid "Plugin Update Checker no está disponible"
+msgstr "Plugin Update Checker no está disponible"
+
+msgid "Sistema de actualizaciones activado para el plugin \"%s\""
+msgstr "Sistema de actualizaciones activado para el plugin \"%s\""
+
+msgid "Error al activar actualizaciones para \"%s\": %s"
+msgstr "Error al activar actualizaciones para \"%s\": %s"
+
+msgid "Verificación de seguridad fallida"
+msgstr "Verificación de seguridad fallida"
+
+msgid "Error de Seguridad"
+msgstr "Error de Seguridad"
+
+msgid "🛡️ Informe de la Forja (Diagnóstico Interno)"
+msgstr "🛡️ Informe de la Forja (Diagnóstico Interno)"
+
+msgid "Cerrar Informe"
+msgstr "Cerrar Informe"
+
+msgid "Actualizar Diagnóstico"
+msgstr "Actualizar Diagnóstico"
+
+msgid "Diagnóstico"
+msgstr "Diagnóstico"

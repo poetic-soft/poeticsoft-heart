@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<ruleset name="PoeticsoftStandard">
+  <description>Reglas personalizadas para Poeticsoft</description>
+  <rule ref="PSR12">
+    <exclude name="PSR1.Methods.CamelCapsMethodName.NotCamelCaps" />
+  </rule>
+  <exclude-pattern>*/vendor/*</exclude-pattern>
+  <exclude-pattern>*/node_modules/*</exclude-pattern>
+  <arg name="extensions" value="php" />
+  <arg name="colors" />
+  <arg value="p" />
+</ruleset>
