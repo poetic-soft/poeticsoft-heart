@@ -26,6 +26,18 @@ class Engine
      */
     protected Admin $admin;
 
+    /** * @var Frontend Controlador de procesos de cargas de frontend.
+     */
+    protected UI $ui;
+
+    /** * @var Logging Controlador de Logs y Mensajes
+     */
+    public Logging $logging;
+
+    /** * @var Inspector Panel de control general en forma de Notice
+     */
+    public Inspector $inspector;
+
     /** * @var string Versión actual del núcleo Heart. Inmutable tras la creación.
      */
     private readonly string $version;
@@ -46,9 +58,9 @@ class Engine
      */
     private readonly string $basename;
 
-    /** * @var string Ruta completa al archivo de depuración personalizado del ecosistema.
+    /** * @var string Prefix global para identificadores
      */
-    private readonly string $logfile;
+    private string $prefix;
 
     /** * @var string Token de autenticación global.
      */
@@ -113,32 +125,22 @@ class Engine
         $this->path = plugin_dir_path($pluginfile);
         $this->url = plugin_dir_url($pluginfile);
         $this->basename = plugin_basename($pluginfile);
-        $this->logfile = WP_CONTENT_DIR . '/poeticsoft-heart-debug.log';
-
-        // Inyección del motor en el controlador administrativo
+        $this->prefix = 'poeticsoft_heart_and_forges_';
+        $this->inspector = new Inspector($this);
         $this->admin = new Admin($this);
-
-        add_action('init', [$this, 'init']);
-
-        $this->ensure_log_availability();
-    }
-
-    /**
-     * Registra un nuevo módulo (Forge) en el registro central.
-     *
-     * @param string         $id        Identificador único (slug) para el módulo.
-     * @param ForgeInterface $instancia Objeto que cumple el contrato ForgeInterface.
-     * @return bool True si el registro fue exitoso.
-     * @throws \InvalidArgumentException Si el ID proporcionado es inválido.
-     */
-    public function registrar_forge(string $id, ForgeInterface $instancia): bool
-    {
-        if (empty($id)) {
-            throw new \InvalidArgumentException('El ID del módulo no puede estar vacío');
-        }
-
-        $this->forges[$id] = $instancia;
-        return true;
+        $this->ui = new UI($this);
+        $this->logging = new Logging($this);
+        
+        // Registra hooks y filtros de UI
+        
+        $this->ui->init();
+        
+        // Hooks ciclo de vida wp
+        
+        add_action(
+            'plugins_loaded', // (Hack favicon.ico for single trig)
+            [$this, 'plugins_loaded']
+        );
     }
 
     /**
@@ -146,8 +148,9 @@ class Engine
      * Ejecuta hooks de acción para permitir extensiones externas.
      * * @return void
      */
-    public function init(): void
+    public function plugins_loaded(): void
     {
+        
         // Hook para que otros plugins registren sus Forges
         do_action('poeticsoft_heart_register', $this);
 
@@ -159,9 +162,9 @@ class Engine
                 
             } catch (\Exception $e) {
                 
-                $this->log("Error al inicializar Forge {$id}: {$e->getMessage()}", 'ERROR');
+                $this->logging->log("Error al inicializar Forge {$id}: {$e->getMessage()}", 'ERROR');
             }
-        }       
+        }
         
         load_plugin_textdomain(
             'poeticsoft-heart',
@@ -173,48 +176,25 @@ class Engine
     }
 
     /**
-     * Escribe eventos en el archivo de log dedicado del sistema.
-     * Solo actúa si WP_DEBUG está activo para optimizar rendimiento.
+     * Registra un nuevo módulo (Forge) en el registro central.
+     * Es llamada desde el archivo principal del plugin
+     * cuando ejecuta la accion poeticsoft_heart_register
+     * Con la instancia de la clase principal como argumento
      *
-     * @param mixed  $mensaje Datos a registrar (strings o arrays/objetos).
-     * @param string $nivel   Categoría del log (INFO, ERROR, DEBUG).
-     * @param string $forge   Origen o nombre del módulo que genera el log.
-     * @return bool True si se escribió correctamente.
+     * @param string $id Identificador único (slug) para el módulo.
+     * @param ForgeInterface $instancia Objeto que cumple el contrato ForgeInterface.
+     * @return bool True si el registro fue exitoso.
+     * @throws \InvalidArgumentException Si el ID proporcionado es inválido.
      */
-    public function log($mensaje, string $nivel = 'INFO', string $forge = 'HEART'): bool
+    public function registrar_forge(string $id, ForgeInterface $instancia): bool
     {
-        if (!defined('WP_DEBUG') || !WP_DEBUG) {
-            return false;
+        if (empty($id)) {
+            throw new \InvalidArgumentException('El ID del módulo no puede estar vacío');
         }
 
-        $text = is_string($mensaje) ? $mensaje : wp_json_encode($mensaje, JSON_PRETTY_PRINT);
-        $fecha = current_time('Y-m-d H:i:s');
-        $entrada = "[{$fecha}] [{$nivel}] [{$forge}]: {$text}" . PHP_EOL;
-
-        if (is_writable(dirname($this->logfile)) || (file_exists($this->logfile) && is_writable($this->logfile))) {
-            return (bool) error_log($entrada, 3, $this->logfile);
-        }
-
-        error_log("HEART_LOG_FALLBACK: " . $entrada);
-        return false;
-    }
-
-    /**
-     * Verifica y prepara el sistema de archivos para el log.
-     * Crea el archivo y ajusta permisos si es necesario.
-     * * @return void
-     */
-    private function ensure_log_availability(): void
-    {
-        $log_dir = dirname($this->logfile);
-        if (is_writable($log_dir)) {
-            if (!file_exists($this->logfile)) {
-                file_put_contents($this->logfile, '');
-            }
-            if (!is_writable($this->logfile)) {
-                chmod($this->logfile, 0664);
-            }
-        }
+        $this->forges[$id] = $instancia;
+        
+        return true;
     }
 
     /** @return string Versión del core. */
@@ -223,16 +203,16 @@ class Engine
         return $this->version;
     }
 
-    /** @return string Ruta del archivo log. */
-    public function get_logfile(): string
-    {
-        return $this->logfile;
-    }
-
     /** @return ForgeInterface[] Listado de módulos. */
     public function get_forges(): array
     {
         return $this->forges;
+    }
+
+    /** @return Forge Busca Forge por Id */
+    public function get_forgeby_id($id): array
+    {
+        return $this->forges[$id];
     }
 
     /** @return string Basename del plugin. */
@@ -276,18 +256,25 @@ class Engine
         try {
             // Acceso seguro a la instancia para obtener rutas
             $instance = self::get_instance();
-            $logfile = $instance->get_logfile();
+            $logfile = $instance->logging->get_logfile();
 
             if (file_exists($logfile)) {
+                
                 @unlink($logfile);
+                
                 $backups = glob($logfile . '.*.bak');
+                
                 if (is_array($backups)) {
+                    
                     foreach ($backups as $file) {
+                        
                         @unlink($file);
                     }
                 }
             }
+            
         } catch (\Exception $e) {
+            
             // Silenciar si el motor no estaba cargado durante la desinstalación
         }
 

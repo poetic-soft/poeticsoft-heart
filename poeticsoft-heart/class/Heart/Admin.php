@@ -32,13 +32,13 @@ class Admin
         // Registramos los enlaces en la tabla de plugins (como "Diagnóstico")
         add_filter(
             'plugin_action_links_' . $this->engine->get_basename(),
-            [Inspector::class, 'add_action_link']
+            [$this->engine->inspector, 'add_action_link']
         );
 
         // Hook para mostrar el panel de diagnóstico si se solicita
         add_action(
             'admin_notices',
-            [Inspector::class, 'render_diagnostic_panel']
+            [$this->engine->inspector, 'render_diagnostic_panel']
         );
 
         // Aquí podrías añadir más hooks administrativos

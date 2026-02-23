@@ -1,0 +1,17 @@
+========================================
+ESTRUCTURA DEL PROYECTO: POETICSOFT-HEART
+Generado el: 2026-02-23 01:10:31
+========================================
+
+├── class
+│   └── Heart
+│       ├── Admin.php
+│       ├── Engine.php
+│       ├── ForgeInterface.php
+│       ├── Inspector.php
+│       ├── Logging.php
+│       ├── UI.php
+│       └── Updater.php
+├── composer.json
+├── poeticsoft-heart.php
+└── uninstall.php

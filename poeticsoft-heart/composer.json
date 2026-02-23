@@ -17,10 +17,7 @@
   "autoload": {
     "psr-4": {
       "Poeticsoft\\": "class/"
-    },
-    "files": [
-      "class/functions.php"
-    ]
+    }
   },
   "config": {
     "optimize-autoloader": true,
@@ -29,10 +26,22 @@
     }
   },
   "require-dev": {
-    "squizlabs/php_codesniffer": "^4.0"
+    "squizlabs/php_codesniffer": "^4.0",
+    "wp-cli/wp-cli-bundle": "^2.12"
   },
   "scripts": {
     "format": "phpcbf .",
-    "lint": "phpcs ."
+    "lint": "phpcs .",
+    "fix": [
+        "@format",
+        "@lint"
+    ],
+    "make-pot": "vendor\\bin\\wp.bat i18n make-pot . languages/poeticsoft-heart.pot --exclude=vendor",  
+    "estructura": "php tools/estructura.php",
+    "plugin": "php tools/plugin.php",
+    "doc": [
+        "@estructura",
+        "@plugin"
+    ]
   }
 }

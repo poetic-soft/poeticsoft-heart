@@ -41,4 +41,46 @@ interface ForgeInterface
      * @return string
      */
     public function get_description();
+
+    /**
+     * Obtiene el path físico del plugin
+     *
+     * @return string
+     */
+    public function get_plugin_path();
+
+    /**
+     * Obtiene la uri del plugin
+     *
+     * @return string
+     */
+    public function get_plugin_uri();
+
+    /**
+     * Flag indicador de que hay blocks para registrar
+     *
+     * @return boolean
+     */
+    public function get_has_blocks();
+
+    /**
+     * Flag indicador de assets (scripts & styles) de admin para cargar
+     *
+     * @return boolean
+     */
+    public function get_has_ui_admin();
+    
+    /**
+     * Flag indicador de assets (scripts & styles) de frontend para cargar
+     *
+     * @return boolean
+     */
+    public function get_has_ui_frontend();
+
+    /**
+     * Flag indicadoor de que declara endpoints api
+     *
+     * @return boolean
+     */
+    public function get_has_api();
 }
