@@ -2,6 +2,8 @@
 
 namespace Poeticsoft\Heart;
 
+use Poeticsoft\Heart\API\Main as API;
+
 /**
  * Motor central del ecosistema Poeticsoft.
  *
@@ -18,6 +20,10 @@ class Engine
      */
     private static ?self $instance = null;
 
+    /** * @var string Id
+     */
+    private string $id;
+
     /** * @var ForgeInterface[] Colección de módulos registrados que implementan la interfaz Forge.
      */
     private array $forges = [];
@@ -25,6 +31,10 @@ class Engine
     /** * @var Admin Controlador del área de administración de WordPress.
      */
     protected Admin $admin;
+
+    /** * @var API Controlador de registro de API endpoints
+     */
+    protected API $api;
 
     /** * @var Frontend Controlador de procesos de cargas de frontend.
      */
@@ -57,10 +67,6 @@ class Engine
     /** * @var string Identificador único de WordPress basado en el path del plugin.
      */
     private readonly string $basename;
-
-    /** * @var string Prefix global para identificadores
-     */
-    private string $prefix;
 
     /** * @var string Token de autenticación global.
      */
@@ -120,22 +126,27 @@ class Engine
     private function __construct(string $pluginfile)
     {
         // Configuración inmutable del entorno
-        $this->version = '1.0.0';
+        $this->id = 'poeticsoft-heart';
+        $this->version = '0.0.0';
         $this->pluginfile = $pluginfile;
         $this->path = plugin_dir_path($pluginfile);
         $this->url = plugin_dir_url($pluginfile);
         $this->basename = plugin_basename($pluginfile);
-        $this->prefix = 'poeticsoft_heart_and_forges_';
         $this->inspector = new Inspector($this);
         $this->admin = new Admin($this);
+        $this->api = new API($this);
         $this->ui = new UI($this);
         $this->logging = new Logging($this);
+        
+        // Registra Endpoints de api
+        
+        $this->api->init();
         
         // Registra hooks y filtros de UI
         
         $this->ui->init();
         
-        // Hooks ciclo de vida wp
+        // Hook registro de Forges
         
         add_action(
             'plugins_loaded', // (Hack favicon.ico for single trig)
@@ -145,7 +156,7 @@ class Engine
 
     /**
      * Dispara la inicialización de todos los módulos registrados.
-     * Ejecuta hooks de acción para permitir extensiones externas.
+     * Inicializa Subclases que necesitan
      * * @return void
      */
     public function plugins_loaded(): void
@@ -165,12 +176,6 @@ class Engine
                 $this->logging->log("Error al inicializar Forge {$id}: {$e->getMessage()}", 'ERROR');
             }
         }
-        
-        load_plugin_textdomain(
-            'poeticsoft-heart',
-            false,
-            dirname($this->basename) . '/languages'
-        );
 
         do_action('poeticsoft_heart_booted', $this);
     }
@@ -195,6 +200,16 @@ class Engine
         $this->forges[$id] = $instancia;
         
         return true;
+    }
+    
+    /**
+     * Getters
+     */
+
+    /** @return string Id Core. */
+    public function get_id(): string
+    {
+        return $this->id;
     }
 
     /** @return string Versión del core. */
@@ -229,7 +244,7 @@ class Engine
     {
         if (null === $this->token) {
             
-            $this->token = wp_create_nonce('poeticsoft_heart_token');
+            $this->token = wp_create_nonce('wp_rest');
         }
 
         return $this->token;

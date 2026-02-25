@@ -85,7 +85,7 @@ class Inspector
         if (
             !isset($_GET['_wpnonce'])
             ||
-            !wp_verify_nonce($_GET['_wpnonce'], 'poeticsoft_heart_token')
+            !wp_verify_nonce($_GET['_wpnonce'], 'wp_rest')
         ) {
             
             wp_die(__('Seguridad fallida: Token inválido', 'poeticsoft-heart'));
@@ -105,7 +105,9 @@ class Inspector
                    'has_blocks' => $forge->get_has_blocks(),
                    'has_ui_admin' => $forge->get_has_ui_admin(),
                    'has_ui_frontend' => $forge->get_has_ui_frontend(),
-                   'has_api' => $forge->get_has_api()
+                   'has_api' => $forge->get_has_api(),
+                   'blocks' => implode(' - ', $forge->data['blocks']),
+                   'endpoints' => isset($forge->data['endpoints']) ? implode(' - ', $forge->data['endpoints']) : ''
                 ];
             },
             $forges
@@ -209,6 +211,29 @@ class Inspector
                                     <span style="float: right;"> - </span>
                                     <span style="float: right;">
                                         <?php echo $forge['has_blocks'] ? 'SI' : 'NO'; ?>
+                                    </span>
+                                </div>                         
+                                <div 
+                                    style="
+                                        padding-bottom: 5px;
+                                        border: dotted #dcdcde;
+                                        border-width: 0 0 1px 0;
+                                        margin-bottom: 5px;
+                                    "
+                                >   
+                                    <strong>Blocks:</strong>
+                                    <span style="float: right;">
+                                        <?php echo $forge['blocks']; ?>
+                                    </span>
+                                </div>                          
+                                <div 
+                                    style="
+                                        padding-bottom: 5px;
+                                    "
+                                >   
+                                    <strong>Endpoints:</strong>
+                                    <span style="float: right;">
+                                        <?php echo $forge['endpoints']; ?>
                                     </span>
                                 </div> 
                             </li>

@@ -1,6 +1,146 @@
 ============================================================
 CÓDIGO INTEGRAL DEL PLUGIN: POETICSOFT-HEART
-Generado el: 2026-02-23 01:10:32
+Generado el: 2026-02-25 02:28:58
+============================================================
+
+class\Heart\API\ForgeAPI.php
+----------------------------------------------
+Archivo: class\Heart\API\ForgeAPI.php
+----------------------------------------------
+
+<?php
+
+namespace Poeticsoft\Heart\API;
+
+use Poeticsoft\Heart\Engine;
+use Poeticsoft\Heart\ForgeInterface;
+
+/**
+ * Plantilla para la API de cada forge
+ * Se ampliará con funcionalidades extra si es necesario
+ * evitando modificar la api de cada forge que sólo se dedica a codificar endpoints
+ *
+ * @since 0.0.0
+ */
+abstract class ForgeAPI
+{
+    protected $forge;
+    protected $engine;
+
+    public function __construct(
+        ForgeInterface $forge,
+        Engine $engine
+    ) {
+        
+        $this->forge = $forge;
+        $this->engine = $engine;
+    }
+
+    /**
+     * Debe retornar el array de configuración de endpoints.
+     */
+    abstract public function get_endpoints(): array;
+    
+    /**
+     * Test de funcion añadida
+     */
+    
+    public function test_auxiliar()
+    {
+        
+        $this->engine->logging->log('AUXILIAR');
+    }
+}
+
+
+============================================================
+
+class\Heart\API\Main.php
+----------------------------------------------
+Archivo: class\Heart\API\Main.php
+----------------------------------------------
+
+<?php
+
+namespace Poeticsoft\Heart\API;
+
+use Poeticsoft\Heart\Engine;
+
+class Main
+{
+    private $engine;
+    
+    public $test = 'test rest';
+
+    public function __construct(Engine $engine)
+    {
+        
+        $this->engine = $engine;
+    }
+
+    public function init()
+    {
+    
+        add_action(
+            'rest_api_init',
+            function () {
+                                
+                $forges = $this->engine->get_forges();
+                
+                foreach ($forges as $forge) {
+                        
+                    if ($forge->get_has_api()) {
+                        
+                        $forge_api = $forge->get_api();
+                
+                        $endpoints = $forge_api->get_endpoints();
+                            
+                        foreach ($endpoints as $version => $sections) {
+                
+                            foreach ($sections as $section => $routes) {
+                                    
+                                foreach ($routes as $route) {
+                                    
+                                    $namespace = $this->engine->get_id() .
+                                    '/' .
+                                    $forge->get_id() .
+                                    '/' .
+                                    $version;
+                                    
+                                    $path = $section .
+                                    '/' .
+                                    $route['path'];
+                                    
+                                    register_rest_route(
+                                        $namespace,
+                                        $path,
+                                        [
+                                            'methods'  => $route['methods'],
+                                            'callback' => $route['callback'],
+                                            'permission_callback' => function () use ($route) {
+                                               
+                                                return $route['public'];
+                                            }
+                                        ]
+                                    );
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        );
+    }
+
+    public function check_permissions()
+    {
+        return is_user_logged_in()
+        ||
+        !empty($_SERVER['PHP_AUTH_USER']);
+    }
+}
+
+
 ============================================================
 
 class\Heart\Admin.php
@@ -77,6 +217,8 @@ Archivo: class\Heart\Engine.php
 
 namespace Poeticsoft\Heart;
 
+use Poeticsoft\Heart\API\Main as API;
+
 /**
  * Motor central del ecosistema Poeticsoft.
  *
@@ -93,6 +235,10 @@ class Engine
      */
     private static ?self $instance = null;
 
+    /** * @var string Id
+     */
+    private string $id;
+
     /** * @var ForgeInterface[] Colección de módulos registrados que implementan la interfaz Forge.
      */
     private array $forges = [];
@@ -100,6 +246,10 @@ class Engine
     /** * @var Admin Controlador del área de administración de WordPress.
      */
     protected Admin $admin;
+
+    /** * @var API Controlador de registro de API endpoints
+     */
+    protected API $api;
 
     /** * @var Frontend Controlador de procesos de cargas de frontend.
      */
@@ -132,10 +282,6 @@ class Engine
     /** * @var string Identificador único de WordPress basado en el path del plugin.
      */
     private readonly string $basename;
-
-    /** * @var string Prefix global para identificadores
-     */
-    private string $prefix;
 
     /** * @var string Token de autenticación global.
      */
@@ -195,22 +341,27 @@ class Engine
     private function __construct(string $pluginfile)
     {
         // Configuración inmutable del entorno
-        $this->version = '1.0.0';
+        $this->id = 'poeticsoft-heart';
+        $this->version = '0.0.0';
         $this->pluginfile = $pluginfile;
         $this->path = plugin_dir_path($pluginfile);
         $this->url = plugin_dir_url($pluginfile);
         $this->basename = plugin_basename($pluginfile);
-        $this->prefix = 'poeticsoft_heart_and_forges_';
         $this->inspector = new Inspector($this);
         $this->admin = new Admin($this);
+        $this->api = new API($this);
         $this->ui = new UI($this);
         $this->logging = new Logging($this);
         
-        // Activa hooks de UI
+        // Registra Endpoints de api
+        
+        $this->api->init();
+        
+        // Registra hooks y filtros de UI
         
         $this->ui->init();
         
-        // Hooks ciclo de vida wp
+        // Hook registro de Forges
         
         add_action(
             'plugins_loaded', // (Hack favicon.ico for single trig)
@@ -220,7 +371,7 @@ class Engine
 
     /**
      * Dispara la inicialización de todos los módulos registrados.
-     * Ejecuta hooks de acción para permitir extensiones externas.
+     * Inicializa Subclases que necesitan
      * * @return void
      */
     public function plugins_loaded(): void
@@ -240,12 +391,6 @@ class Engine
                 $this->logging->log("Error al inicializar Forge {$id}: {$e->getMessage()}", 'ERROR');
             }
         }
-        
-        load_plugin_textdomain(
-            'poeticsoft-heart',
-            false,
-            dirname($this->basename) . '/languages'
-        );
 
         do_action('poeticsoft_heart_booted', $this);
     }
@@ -270,6 +415,16 @@ class Engine
         $this->forges[$id] = $instancia;
         
         return true;
+    }
+    
+    /**
+     * Getters
+     */
+
+    /** @return string Id Core. */
+    public function get_id(): string
+    {
+        return $this->id;
     }
 
     /** @return string Versión del core. */
@@ -347,6 +502,7 @@ class Engine
                     }
                 }
             }
+            
         } catch (\Exception $e) {
             
             // Silenciar si el motor no estaba cargado durante la desinstalación
@@ -389,9 +545,16 @@ interface ForgeInterface
     public function init(Engine $engine);
 
     /**
+     * Obtiene el id del bloque para construccion de identificadores
+     *
+     * @return string Ejemplo: "forge_base"
+     */
+    public function get_id();
+
+    /**
      * Obtiene el nombre legible del módulo.
      *
-     * @return string Ejemplo: "Inventory Forge"
+     * @return string Ejemplo: "Forge Base"
      */
     public function get_name();
 
@@ -445,7 +608,7 @@ interface ForgeInterface
     public function get_has_ui_frontend();
 
     /**
-     * Flag indicadoor de que declara endpoints api
+     * Flag indicador de que declara endpoints api
      *
      * @return boolean
      */
@@ -558,6 +721,8 @@ class Inspector
         $forges = array_map(
             function ($forge) {
                 
+                // $this->engine->logging->log($forge->get_api()->get_endpoints());
+                
                 return [
                    'name' => $forge->get_name(),
                    'version' => $forge->get_version(),
@@ -567,7 +732,8 @@ class Inspector
                    'has_blocks' => $forge->get_has_blocks(),
                    'has_ui_admin' => $forge->get_has_ui_admin(),
                    'has_ui_frontend' => $forge->get_has_ui_frontend(),
-                   'has_api' => $forge->get_has_api()
+                   'has_api' => $forge->get_has_api(),
+                   'blocks' => implode(' - ', $forge->data['blocks'])
                 ];
             },
             $forges
@@ -671,6 +837,16 @@ class Inspector
                                     <span style="float: right;"> - </span>
                                     <span style="float: right;">
                                         <?php echo $forge['has_blocks'] ? 'SI' : 'NO'; ?>
+                                    </span>
+                                </div>                         
+                                <div 
+                                    style="
+                                        padding-bottom: 5px;
+                                    "
+                                >   
+                                    <strong>Blocks:</strong>
+                                    <span style="float: right;">
+                                        <?php echo $forge['blocks']; ?>
                                     </span>
                                 </div> 
                             </li>
@@ -781,8 +957,8 @@ class Logging
                 
             } else {
             
-                /*  DEBUG empty file */
-                file_put_contents($this->logfile, '');
+                /*  DEBUG empty file
+                file_put_contents($this->logfile, ''); */
             }
             
         } else {
@@ -803,8 +979,11 @@ class Logging
      * @param string $forge   Origen o nombre del módulo que genera el log.
      * @return bool True si se escribió correctamente.
      */
-    public function log($mensaje, string $nivel = 'INFO', string $forge = 'HEART'): bool
-    {
+    public function log(
+        $mensaje,
+        string $nivel = 'INFO',
+        string $forge = 'HEART'
+    ): bool {
         
         if (!defined('WP_DEBUG') || !WP_DEBUG) {
             return false;
@@ -842,12 +1021,12 @@ Archivo: class\Heart\UI.php
 namespace Poeticsoft\Heart;
 
 /**
- * Clase Frontend - procesos relacionados son inteface de usuario
+ * Clase UI - procesos relacionados son inteface de usuario
  *
  * Carga recursos para Administracion y Visualización Frontend
  * de tods los Forges!
  *
- * @package Poeticsoft\Frontend
+ * @package Poeticsoft\UI
  * @since 0.0.0
  */
 class UI
@@ -876,38 +1055,11 @@ class UI
      * @since 0.0.0
      */
     private function forges_register_blocks_common()
-    {    
-        add_filter(
-            'block_categories_all',
-            function (
-                $categories,
-                $post
-            ) {
-                    
-                $this->engine->logging->log('------------------------------------');
-                $this->engine->logging->log('BLOCKS COMMON CATEGORIES');
-
-                return array_merge(
-                    [
-                        [
-                            'slug'  => 'poeticsoft',
-                            'title' => __('Poeticsoft', 'poeticsoft'),
-                            'icon'  => 'screenoptions'
-                        ],
-                    ],
-                    $categories
-                );
-            },
-            99,
-            2
-        );        
+    {
 
         add_action(
             'enqueue_block_assets',
             function () {
-                    
-                $this->engine->logging->log('------------------------------------');
-                $this->engine->logging->log('BLOCKS COMMON BLOCK ASSETS');
                 
                 wp_enqueue_style('dashicons');
             }
@@ -915,7 +1067,7 @@ class UI
     }
     
     /**
-     * Registra cada bloque de los forges
+     * Crea categoria de bloques para cada forge y registra los bloques en ella
      *
      * @since 0.0.0
      */
@@ -923,16 +1075,87 @@ class UI
     {
 
         add_action(
-            'enqueue_block_editor_assets',
+            'init',
             function () {
-                
-                $this->engine->logging->log('------------------------------------');
-                $this->engine->logging->log('BLOCKS EDITOR ASSETS');
-                $this->engine->logging->log($this->engine->get_forges());
-            
-                foreach ($this->engine->get_forges() as $forge) {
                     
-                    $this->engine->logging->log($forge->get_name());
+                add_filter(
+                    'block_categories_all',
+                    function (
+                        $categories,
+                        $post
+                    ) {
+                
+                        $forges = $this->engine->get_forges();
+                        foreach ($forges as $forge_id => $forge) {
+                        
+                            if ($forge->get_has_blocks()) {
+                            
+                                $forge_name = $forge->get_name();
+                            
+                                $posticsoft_heart_category = [
+                                    'slug'  => 'poeticsoft-' . $forge_id,
+                                    'title' => 'Poeticsoft ' . $forge_name
+                                ];
+                                
+                                array_unshift($categories, $posticsoft_heart_category);
+                
+                                /**
+                                 * DEBUG
+                                $this->engine->logging->log('---------------------------------------------');
+                                $this->engine->logging->log('CATEGORY');
+                                $this->engine->logging->log($posticsoft_heart_category);
+                                 */
+                            }
+                        }
+
+                        return $categories;
+                    },
+                    10,
+                    2
+                );
+                
+                $forges = $this->engine->get_forges();
+                foreach ($forges as $forge_id => $forge) {
+                    
+                    if ($forge->get_has_blocks()) {
+                        
+                        $forge_path = $forge->get_plugin_path();
+                        $blocks_path = $forge_path . '/block';
+                        $block_names = array_diff(
+                            scandir($blocks_path),
+                            ['..', '.']
+                        );
+                        
+                        $this->engine->get_forges();
+                        
+                        $forge->data['blocks'] = [];
+                       
+                        foreach ($block_names as $key => $block_name) {
+
+                            $block_json_dir = $blocks_path . '/' . $block_name;
+                            
+                            $registered = register_block_type($block_json_dir);
+                            
+                            if ($registered) {
+                                
+                                $forge->data['blocks'][] = $block_name;
+                            }
+                            
+                            /**
+                             * DEBUG
+                            $forge_name = $forge->get_name();
+                            $this->engine->logging->log('---------------------------------------------');
+                            $this->engine->logging->log(
+                                'registered block ' .
+                                $block_name .
+                                ' en ' .
+                                'Poeticsoft ' . $forge_name .
+                                ' -> ' .
+                                ( $registered ? 'SI' : 'NO')
+                            );
+                             */
+                        }
+                    }
                 }
             }
         );
@@ -943,20 +1166,80 @@ class UI
      *
      * @since 0.0.0
      */
+    
+    private function forges_enqueue_ui($forge, $section)
+    {
+        
+        $heart_id = $this->engine->get_id();
+        $forge_id = $forge->get_id();
+        $enqueue_id = $heart_id . '-' . $forge_id . '-' . $section;
+        $forge_path = $forge->get_plugin_path();
+        $forge_uri = $forge->get_plugin_uri();
+        
+        $deps = [
+        'admin' => [
+            'wp-blocks',
+            'wp-block-editor',
+            'wp-element',
+            'wp-components',
+            'wp-data',
+            'wp-hooks',
+            'lodash'
+        ],
+        'frontend' => [
+            'wp-element',
+            'wp-components',
+            'wp-data'
+        ]
+        ];
+        
+        /**
+         * DEBUG
+        $this->engine->logging->log([
+            'enqueue_id' => $enqueue_id,
+            'uri' => $forge_uri . '/ui/' . $section . '/main.js',
+            'deps' => $deps[$section],
+            'path' => $forge_path . '/ui/' . $section . '/main.js'
+        ]);
+        */
+    
+        wp_enqueue_script(
+            $enqueue_id,
+            $forge_uri . '/ui/' . $section . '/main.js',
+            $deps[$section],
+            filemtime($forge_path . '/ui/' . $section . '/main.js'),
+            true
+        );
+    
+        wp_enqueue_style(
+            $enqueue_id,
+            $forge_uri . '/ui/' . $section . '/main.css',
+            [],
+            filemtime($forge_path . '/ui/' . $section . '/main.css'),
+            'all'
+        );
+    }
+    
+    /**
+     * Carga los assets (scripts & styles) del los ui de admin cada forge
+     *
+     * @since 0.0.0
+     */
+    
     private function forges_enqueue_ui_admin()
     {
         
         add_action(
             'admin_enqueue_scripts',
             function () {
+                
+                $forges = $this->engine->get_forges();
+                foreach ($forges as $forge_id => $forge) {
                     
-                $this->engine->logging->log('------------------------------------');
-                $this->engine->logging->log('UI ADMIN FORGES');
-                $this->engine->logging->log($this->engine->get_forges());
-        
-                foreach ($this->engine->get_forges() as $forge) {
-                                
-                    // Enqueue frontend
+                    if ($forge->get_has_ui_admin()) {
+                        
+                        $this->forges_enqueue_ui($forge, 'admin');
+                    }
                 }
             }
         );
@@ -973,26 +1256,40 @@ class UI
         add_action(
             'wp_enqueue_scripts',
             function () {
+                
+                $forges = $this->engine->get_forges();
+                foreach ($forges as $forge_id => $forge) {
                     
-                $this->engine->logging->log('------------------------------------');
-                $this->engine->logging->log('UI FRONTEND_FORGES');
-                $this->engine->logging->log($this->engine->get_forges());
-        
-                foreach ($this->engine->get_forges() as $forge) {
-                                
-                    // Enqueue frontend
+                    if ($forge->get_has_ui_frontend()) {
+                        
+                        $this->forges_enqueue_ui($forge, 'frontend');
+                    }
                 }
             }
         );
     }
     
     /**
-     * Lanza los procesos de carga para los assets y blocks de los Forges
+     * Lanza los procesos de carga para los languages
+     * y assets y blocks de los Forges
      *
      * @since 0.0.0
      */
     public function init()
     {
+        
+        // Languages
+        add_action(
+            'init',
+            function () {
+        
+                load_plugin_textdomain(
+                    'poeticsoft-heart',
+                    false,
+                    dirname($this->engine->get_basename()) . '/languages'
+                );
+            }
+        );
         
         // // Elementos comunes de los blocks (categoria, iconos, etc)
         $this->forges_register_blocks_common();

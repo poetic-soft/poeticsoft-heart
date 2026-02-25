@@ -77,8 +77,11 @@ class Logging
      * @param string $forge   Origen o nombre del módulo que genera el log.
      * @return bool True si se escribió correctamente.
      */
-    public function log($mensaje, string $nivel = 'INFO', string $forge = 'HEART'): bool
-    {
+    public function log(
+        $mensaje,
+        string $nivel = 'INFO',
+        string $forge = 'HEART'
+    ): bool {
         
         if (!defined('WP_DEBUG') || !WP_DEBUG) {
             return false;

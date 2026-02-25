@@ -22,9 +22,16 @@ interface ForgeInterface
     public function init(Engine $engine);
 
     /**
+     * Obtiene el id del bloque para construccion de identificadores
+     *
+     * @return string Ejemplo: "forge_base"
+     */
+    public function get_id();
+
+    /**
      * Obtiene el nombre legible del módulo.
      *
-     * @return string Ejemplo: "Inventory Forge"
+     * @return string Ejemplo: "Forge Base"
      */
     public function get_name();
 
@@ -78,7 +85,7 @@ interface ForgeInterface
     public function get_has_ui_frontend();
 
     /**
-     * Flag indicadoor de que declara endpoints api
+     * Flag indicador de que declara endpoints api
      *
      * @return boolean
      */
