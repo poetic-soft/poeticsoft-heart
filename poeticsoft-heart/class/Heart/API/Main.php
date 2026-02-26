@@ -3,17 +3,21 @@
 namespace Poeticsoft\Heart\API;
 
 use Poeticsoft\Heart\Engine;
+use stdClass;
 
 class Main
 {
     private $engine;
-    
-    public $test = 'test rest';
+    private $whitelist;
 
     public function __construct(Engine $engine)
     {
         
         $this->engine = $engine;
+        $this->whitelist = [
+            'public' => [],
+            'logged' => []
+        ];
     }
 
     public function init()
@@ -22,6 +26,8 @@ class Main
         add_action(
             'rest_api_init',
             function () {
+                
+                $this->engine->logging->log('rest_api_init');
                                 
                 $forges = $this->engine->get_forges();
                 
@@ -30,6 +36,10 @@ class Main
                     if ($forge->get_has_api()) {
                         
                         $forge_api = $forge->get_api();
+                        
+                        $whitelist = $forge_api->get_whitelist();
+                        
+                        $this->engine->logging->log($whitelist);
                 
                         $endpoints = $forge_api->get_endpoints();
                         
@@ -59,23 +69,7 @@ class Main
                                         [
                                             'methods'  => $route['methods'],
                                             'callback' => $route['callback'],
-                                            'permission_callback' => function (
-                                                \WP_REST_Request $request
-                                            ) use (
-                                                $route
-                                            ) {
-                                                
-                                                // Si la ruta es marcada como pública, permitimos acceso
-                                                if (
-                                                    isset($route['public']) 
-                                                    && $route['public']
-                                                ) {
-                                                    return true;
-                                                }
-                                                
-                                                // De lo contrario, validamos seguridad
-                                                return $this->check_permissions($request);
-                                            }
+                                            'permission_callback' => '__return_true'
                                         ]
                                     );
                                 }
@@ -85,50 +79,59 @@ class Main
                 }
             }
         );
-    }
-
-    /**
-     * Valida la seguridad de la petición.
-     * Soporta: 
-     * 1. Nonces de WP (para llamadas desde el propio sitio/JS).
-     * 2. Application Passwords (nativo de WP para llamadas externas).
-     * * @param \WP_REST_Request $request
-     * @return bool|\WP_Error
-     */
-    public function check_permissions(\WP_REST_Request $request)
-    {
         
-        // 1. Validar si el usuario ya está autenticado (vía Cookie o Application Password)
-        $user_id = get_current_user_id();
+        add_filter(
+            'rest_authentication_errors',
+            function ($result) {
+                
+                return $result;
 
-        if (!$user_id) {
-            
-            return new \WP_Error(
-                'rest_forbidden',
-                __('No tienes permisos para realizar esta acción (Autenticación requerida).', 'poeticsoft-heart'),
-                ['status' => 401]
-            );
-        }
+                // if (!empty($result)) {
+                
+                //     return $result;
+                // }
 
-        // 2. Si la petición es vía AJAX/Web interna, verificamos el Nonce
-        // WordPress REST API verifica el nonce automáticamente si se envía en el header 'X-WP-Nonce'
-        // Pero nosotros podemos forzar la validación de nuestro token específico si es necesario
-        $nonce = $request->get_header('X-WP-Nonce');
-        
-        if (
-            $nonce 
-            && 
-            !wp_verify_nonce($nonce, 'wp_rest')
-        ) {
-            
-            return new \WP_Error(
-                'rest_cookie_invalid_nonce',
-                __('Token de seguridad inválido.', 'poeticsoft-heart'),
-                ['status' => 403]
-            );
-        }
+                $request_uri = sanitize_text_field(wp_unslash($_SERVER['REQUEST_URI']));
+                $request_method = sanitize_text_field(wp_unslash($_SERVER['REQUEST_METHOD']));
+                
+                // $request_uri = $_SERVER['REQUEST_URI'] ?? '';
+                
+                // foreach ($allowedpublic as $pattern) {
 
-        // 3. Verificación adicional de capacidades si fuera necesario
-        return current_user_can('read'); 
+                //     $regex = '#^' . str_replace('\*', '.*', preg_quote($pattern, '#')) . '$#';
+                //     if (preg_match($regex, $request_uri)) {
+
+                //         return $result;
+
+                //         break;
+                //     }
+                // }
+
+                // if (is_user_logged_in()) {
+
+                //     foreach ($allowedlogedusers as $pattern) {
+
+                //         $regex = '#^' . str_replace('\*', '.*', preg_quote($pattern, '#')) . '$#';
+                //         if (preg_match($regex, $request_uri)) {
+
+                //         return $result;
+
+                //         break;
+                //         }
+                //     }
+
+                //     if ($this->api_isadminuser()) {
+
+                //         return $result;
+                //     }
+                // }
+
+                // return new WP_Error(
+                //     'rest_cannot_access',
+                //     __('REST API restricted access. Needs authentication.'),
+                //     array( 'status' => 401 )
+                // );
+            }
+        );
     }
 }

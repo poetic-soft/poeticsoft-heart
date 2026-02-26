@@ -17,14 +17,10 @@ abstract class ForgeAPI
     protected $forge;
     protected $engine;
 
-    public function __construct(
-        ForgeInterface $forge,
-        Engine $engine
-    ) {
-        
-        $this->forge = $forge;
-        $this->engine = $engine;
-    }
+    /**
+     * Debe retornar el array de whitelist.
+     */
+    abstract public function get_whitelist(): array;
 
     /**
      * Debe retornar el array de configuración de endpoints.
@@ -32,12 +28,37 @@ abstract class ForgeAPI
     abstract public function get_endpoints(): array;
     
     /**
-     * Test de funcion añadida
+     * Envía una respuesta unificada siguiendo el estándar de Poeticsoft Forge.
+     * * @param mixed $data Datos a enviar o mensaje de error.
+     * @param int $status Código de estado HTTP.
+     * @param bool $success Indica si la operación fue exitosa.
+     * @return \WP_REST_Response
      */
-    
-    public function test_auxiliar()
-    {
+    protected function send_response(
+        $data,
+        int $status = 200,
+        bool $success = true
+    ): \WP_REST_Response {
         
-        $this->engine->logging->log('AUXILIAR');
+        $response = [
+            'user' => get_current_user_id(),
+            'success' => $success,
+            'forge' => $this->forge->get_id(), // Identificamos qué forge responde
+            'data' => $success ? $data : null,
+            'error' => !$success ? $data : null,
+            'meta' => [
+                'timestamp' => time(),
+                'version' => '1.0.0'
+            ]
+        ];
+
+        return new \WP_REST_Response($response, $status);
     }
+    
+    /**
+     * Pueden incorporarse funcionalidades extras para la API de los forges
+     *
+     * protected function extra() { }
+     *
+     */
 }

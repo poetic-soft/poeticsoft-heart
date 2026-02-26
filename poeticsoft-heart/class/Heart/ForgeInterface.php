@@ -83,6 +83,27 @@ interface ForgeInterface
      * @return boolean
      */
     public function get_has_ui_frontend();
+    
+    /**
+     * Flag indicador de que se han creado overrides de core blocks
+     *
+     * @return boolean
+     */
+    public function get_has_core_blocks();
+    
+    /**
+     * Flag indicador de que se han creado configuradores de core blocks
+     *
+     * @return boolean
+     */
+    public function get_has_ui_core_configs();
+
+    /**
+     * Flag indicador de que hay metaboxes de edicion
+     *
+     * @return boolean
+     */
+    public function get_has_metabox();
 
     /**
      * Flag indicador de que declara endpoints api

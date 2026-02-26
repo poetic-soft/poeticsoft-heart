@@ -1,6 +1,6 @@
 ============================================================
 CÓDIGO INTEGRAL DEL PLUGIN: POETICSOFT-HEART
-Generado el: 2026-02-25 02:28:58
+Generado el: 2026-02-25 12:07:41
 ============================================================
 
 class\Heart\API\ForgeAPI.php
@@ -40,6 +40,32 @@ abstract class ForgeAPI
      * Debe retornar el array de configuración de endpoints.
      */
     abstract public function get_endpoints(): array;
+    
+    /**
+     * Envía una respuesta unificada siguiendo el estándar de Poeticsoft Forge.
+     * * @param mixed $data Datos a enviar o mensaje de error.
+     * @param int $status Código de estado HTTP.
+     * @param bool $success Indica si la operación fue exitosa.
+     * @return \WP_REST_Response
+     */
+    protected function send_response(
+        $data,
+        int $status = 200,
+        bool $success = true
+    ): \WP_REST_Response {
+        $response = [
+            'success' => $success,
+            'forge'   => $this->forge->get_id(), // Identificamos qué forge responde
+            'data'    => $success ? $data : null,
+            'error'   => !$success ? $data : null,
+            'meta'    => [
+                'timestamp' => time(),
+                'version'   => '1.0.0'
+            ]
+        ];
+
+        return new \WP_REST_Response($response, $status);
+    }
     
     /**
      * Test de funcion añadida
@@ -94,6 +120,8 @@ class Main
                         $forge_api = $forge->get_api();
                 
                         $endpoints = $forge_api->get_endpoints();
+                        
+                        $forge->data['endpoints'] = [];
                             
                         foreach ($endpoints as $version => $sections) {
                 
@@ -111,15 +139,32 @@ class Main
                                     '/' .
                                     $route['path'];
                                     
+                                    $forge->data['endpoints'][] = $namespace . '/' . $path; // TO DO see in Inspector
+                                    
                                     register_rest_route(
                                         $namespace,
                                         $path,
                                         [
                                             'methods'  => $route['methods'],
                                             'callback' => $route['callback'],
-                                            'permission_callback' => function () use ($route) {
-                                               
-                                                return $route['public'];
+                                            'permission_callback' => function (
+                                                \WP_REST_Request $request
+                                            ) use (
+                                                $route
+                                            ) {
+                                                
+                                                // Si la ruta es marcada como pública, permitimos acceso
+                                                if (
+                                                    isset($route['public'])
+                                                    &&
+                                                    $route['public']
+                                                ) {
+                                                    
+                                                    return true;
+                                                }
+                                                
+                                                // De lo contrario, validamos seguridad
+                                                return $this->check_permissions($request);
                                             }
                                         ]
                                     );
@@ -132,11 +177,49 @@ class Main
         );
     }
 
-    public function check_permissions()
+    /**
+     * Valida la seguridad de la petición.
+     * Soporta:
+     * 1. Nonces de WP (para llamadas desde el propio sitio/JS).
+     * 2. Application Passwords (nativo de WP para llamadas externas).
+     * * @param \WP_REST_Request $request
+     * @return bool|\WP_Error
+     */
+    public function check_permissions(\WP_REST_Request $request)
     {
-        return is_user_logged_in()
-        ||
-        !empty($_SERVER['PHP_AUTH_USER']);
+        
+        // 1. Validar si el usuario ya está autenticado (vía Cookie o Application Password)
+        $user_id = get_current_user_id();
+
+        if (!$user_id) {
+            
+            return new \WP_Error(
+                'rest_forbidden',
+                __('No tienes permisos para realizar esta acción (Autenticación requerida).', 'poeticsoft-heart'),
+                ['status' => 401]
+            );
+        }
+
+        // 2. Si la petición es vía AJAX/Web interna, verificamos el Nonce
+        // WordPress REST API verifica el nonce automáticamente si se envía en el header 'X-WP-Nonce'
+        // Pero nosotros podemos forzar la validación de nuestro token específico si es necesario
+        $nonce = $request->get_header('X-WP-Nonce');
+        
+        if (
+            $nonce
+            &&
+            !wp_verify_nonce($nonce, 'wp_rest')
+        ) {
+            
+            return new \WP_Error(
+                'rest_cookie_invalid_nonce',
+                __('Token de seguridad inválido.', 'poeticsoft-heart'),
+                ['status' => 403]
+            );
+        }
+
+        // 3. Verificación adicional de capacidades si fuera necesario
+        return current_user_can('read');
     }
 }
 
@@ -459,7 +542,7 @@ class Engine
     {
         if (null === $this->token) {
             
-            $this->token = wp_create_nonce('poeticsoft_heart_token');
+            $this->token = wp_create_nonce('wp_rest');
         }
 
         return $this->token;
@@ -710,7 +793,7 @@ class Inspector
         if (
             !isset($_GET['_wpnonce'])
             ||
-            !wp_verify_nonce($_GET['_wpnonce'], 'poeticsoft_heart_token')
+            !wp_verify_nonce($_GET['_wpnonce'], 'wp_rest')
         ) {
             
             wp_die(__('Seguridad fallida: Token inválido', 'poeticsoft-heart'));
@@ -720,8 +803,6 @@ class Inspector
         $forges = $this->engine->get_forges();
         $forges = array_map(
             function ($forge) {
-                
-                // $this->engine->logging->log($forge->get_api()->get_endpoints());
                 
                 return [
                    'name' => $forge->get_name(),
@@ -733,7 +814,8 @@ class Inspector
                    'has_ui_admin' => $forge->get_has_ui_admin(),
                    'has_ui_frontend' => $forge->get_has_ui_frontend(),
                    'has_api' => $forge->get_has_api(),
-                   'blocks' => implode(' - ', $forge->data['blocks'])
+                   'blocks' => implode(' - ', $forge->data['blocks']),
+                   'endpoints' => isset($forge->data['endpoints']) ? implode(' - ', $forge->data['endpoints']) : ''
                 ];
             },
             $forges
@@ -842,11 +924,24 @@ class Inspector
                                 <div 
                                     style="
                                         padding-bottom: 5px;
+                                        border: dotted #dcdcde;
+                                        border-width: 0 0 1px 0;
+                                        margin-bottom: 5px;
                                     "
                                 >   
                                     <strong>Blocks:</strong>
                                     <span style="float: right;">
                                         <?php echo $forge['blocks']; ?>
+                                    </span>
+                                </div>                          
+                                <div 
+                                    style="
+                                        padding-bottom: 5px;
+                                    "
+                                >   
+                                    <strong>Endpoints:</strong>
+                                    <span style="float: right;">
+                                        <?php echo $forge['endpoints']; ?>
                                     </span>
                                 </div> 
                             </li>

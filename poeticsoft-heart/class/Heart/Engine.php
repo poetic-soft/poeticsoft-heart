@@ -3,9 +3,10 @@
 namespace Poeticsoft\Heart;
 
 use Poeticsoft\Heart\API\Main as API;
+use Poeticsoft\Heart\Admin\Main as Admin;
 
 /**
- * Motor central del ecosistema Poeticsoft.
+ * Motor central del ecosistema Poeticsoft Heart & Forges .
  *
  * Gestiona el ciclo de vida de los módulos (Forges), el registro centralizado
  * de logs y la inicialización de componentes administrativos del núcleo.

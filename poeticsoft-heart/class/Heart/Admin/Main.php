@@ -1,6 +1,8 @@
 <?php
 
-namespace Poeticsoft\Heart;
+namespace Poeticsoft\Heart\Admin;
+
+use Poeticsoft\Heart\Engine;
 
 /**
  * Clase Admin - Gestor de la interfaz administrativa.
@@ -11,7 +13,7 @@ namespace Poeticsoft\Heart;
  * @package Poeticsoft\Heart
  * @since 0.0.0
  */
-class Admin
+class Main
 {
     /**
      * Instancia del motor principal.
