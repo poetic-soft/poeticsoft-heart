@@ -1,6 +1,6 @@
 ============================================================
 CÓDIGO INTEGRAL DEL PLUGIN: POETICSOFT-HEART
-Generado el: 2026-02-25 12:07:41
+Generado el: 2026-02-27 12:39:49
 ============================================================
 
 class\Heart\API\ForgeAPI.php
@@ -27,14 +27,10 @@ abstract class ForgeAPI
     protected $forge;
     protected $engine;
 
-    public function __construct(
-        ForgeInterface $forge,
-        Engine $engine
-    ) {
-        
-        $this->forge = $forge;
-        $this->engine = $engine;
-    }
+    /**
+     * Debe retornar el array de whitelist.
+     */
+    abstract public function get_whitelist(): array;
 
     /**
      * Debe retornar el array de configuración de endpoints.
@@ -53,14 +49,16 @@ abstract class ForgeAPI
         int $status = 200,
         bool $success = true
     ): \WP_REST_Response {
+        
         $response = [
+            'user' => get_current_user_id(),
             'success' => $success,
-            'forge'   => $this->forge->get_id(), // Identificamos qué forge responde
-            'data'    => $success ? $data : null,
-            'error'   => !$success ? $data : null,
-            'meta'    => [
+            'forge' => $this->forge->get_id(), // Identificamos qué forge responde
+            'data' => $success ? $data : null,
+            'error' => !$success ? $data : null,
+            'meta' => [
                 'timestamp' => time(),
-                'version'   => '1.0.0'
+                'version' => '1.0.0'
             ]
         ];
 
@@ -68,14 +66,11 @@ abstract class ForgeAPI
     }
     
     /**
-     * Test de funcion añadida
+     * Pueden incorporarse funcionalidades extras para la API de los forges
+     *
+     * protected function extra() { }
+     *
      */
-    
-    public function test_auxiliar()
-    {
-        
-        $this->engine->logging->log('AUXILIAR');
-    }
 }
 
 
@@ -91,17 +86,21 @@ Archivo: class\Heart\API\Main.php
 namespace Poeticsoft\Heart\API;
 
 use Poeticsoft\Heart\Engine;
+use stdClass;
 
 class Main
 {
     private $engine;
-    
-    public $test = 'test rest';
+    private $whitelist;
 
     public function __construct(Engine $engine)
     {
         
         $this->engine = $engine;
+        $this->whitelist = [
+            'public' => [],
+            'logged' => []
+        ];
     }
 
     public function init()
@@ -110,6 +109,8 @@ class Main
         add_action(
             'rest_api_init',
             function () {
+                
+                $this->engine->logging->log('rest_api_init');
                                 
                 $forges = $this->engine->get_forges();
                 
@@ -118,6 +119,10 @@ class Main
                     if ($forge->get_has_api()) {
                         
                         $forge_api = $forge->get_api();
+                        
+                        $whitelist = $forge_api->get_whitelist();
+                        
+                        $this->engine->logging->log($whitelist);
                 
                         $endpoints = $forge_api->get_endpoints();
                         
@@ -147,25 +152,7 @@ class Main
                                         [
                                             'methods'  => $route['methods'],
                                             'callback' => $route['callback'],
-                                            'permission_callback' => function (
-                                                \WP_REST_Request $request
-                                            ) use (
-                                                $route
-                                            ) {
-                                                
-                                                // Si la ruta es marcada como pública, permitimos acceso
-                                                if (
-                                                    isset($route['public'])
-                                                    &&
-                                                    $route['public']
-                                                ) {
-                                                    
-                                                    return true;
-                                                }
-                                                
-                                                // De lo contrario, validamos seguridad
-                                                return $this->check_permissions($request);
-                                            }
+                                            'permission_callback' => '__return_true'
                                         ]
                                     );
                                 }
@@ -175,65 +162,76 @@ class Main
                 }
             }
         );
-    }
-
-    /**
-     * Valida la seguridad de la petición.
-     * Soporta:
-     * 1. Nonces de WP (para llamadas desde el propio sitio/JS).
-     * 2. Application Passwords (nativo de WP para llamadas externas).
-     * * @param \WP_REST_Request $request
-     * @return bool|\WP_Error
-     */
-    public function check_permissions(\WP_REST_Request $request)
-    {
         
-        // 1. Validar si el usuario ya está autenticado (vía Cookie o Application Password)
-        $user_id = get_current_user_id();
+        add_filter(
+            'rest_authentication_errors',
+            function ($result) {
+                
+                return $result;
 
-        if (!$user_id) {
-            
-            return new \WP_Error(
-                'rest_forbidden',
-                __('No tienes permisos para realizar esta acción (Autenticación requerida).', 'poeticsoft-heart'),
-                ['status' => 401]
-            );
-        }
+                // if (!empty($result)) {
+                
+                //     return $result;
+                // }
 
-        // 2. Si la petición es vía AJAX/Web interna, verificamos el Nonce
-        // WordPress REST API verifica el nonce automáticamente si se envía en el header 'X-WP-Nonce'
-        // Pero nosotros podemos forzar la validación de nuestro token específico si es necesario
-        $nonce = $request->get_header('X-WP-Nonce');
-        
-        if (
-            $nonce
-            &&
-            !wp_verify_nonce($nonce, 'wp_rest')
-        ) {
-            
-            return new \WP_Error(
-                'rest_cookie_invalid_nonce',
-                __('Token de seguridad inválido.', 'poeticsoft-heart'),
-                ['status' => 403]
-            );
-        }
+                $request_uri = sanitize_text_field(wp_unslash($_SERVER['REQUEST_URI']));
+                $request_method = sanitize_text_field(wp_unslash($_SERVER['REQUEST_METHOD']));
+                
+                // $request_uri = $_SERVER['REQUEST_URI'] ?? '';
+                
+                // foreach ($allowedpublic as $pattern) {
 
-        // 3. Verificación adicional de capacidades si fuera necesario
-        return current_user_can('read');
+                //     $regex = '#^' . str_replace('\*', '.*', preg_quote($pattern, '#')) . '$#';
+                //     if (preg_match($regex, $request_uri)) {
+
+                //         return $result;
+
+                //         break;
+                //     }
+                // }
+
+                // if (is_user_logged_in()) {
+
+                //     foreach ($allowedlogedusers as $pattern) {
+
+                //         $regex = '#^' . str_replace('\*', '.*', preg_quote($pattern, '#')) . '$#';
+                //         if (preg_match($regex, $request_uri)) {
+
+                //         return $result;
+
+                //         break;
+                //         }
+                //     }
+
+                //     if ($this->api_isadminuser()) {
+
+                //         return $result;
+                //     }
+                // }
+
+                // return new WP_Error(
+                //     'rest_cannot_access',
+                //     __('REST API restricted access. Needs authentication.'),
+                //     array( 'status' => 401 )
+                // );
+            }
+        );
     }
 }
 
 
 ============================================================
 
-class\Heart\Admin.php
+class\Heart\Admin\Main.php
 ----------------------------------------------
-Archivo: class\Heart\Admin.php
+Archivo: class\Heart\Admin\Main.php
 ----------------------------------------------
 
 <?php
 
-namespace Poeticsoft\Heart;
+namespace Poeticsoft\Heart\Admin;
+
+use Poeticsoft\Heart\Engine;
 
 /**
  * Clase Admin - Gestor de la interfaz administrativa.
@@ -244,7 +242,7 @@ namespace Poeticsoft\Heart;
  * @package Poeticsoft\Heart
  * @since 0.0.0
  */
-class Admin
+class Main
 {
     /**
      * Instancia del motor principal.
@@ -301,9 +299,10 @@ Archivo: class\Heart\Engine.php
 namespace Poeticsoft\Heart;
 
 use Poeticsoft\Heart\API\Main as API;
+use Poeticsoft\Heart\Admin\Main as Admin;
 
 /**
- * Motor central del ecosistema Poeticsoft.
+ * Motor central del ecosistema Poeticsoft Heart & Forges.
  *
  * Gestiona el ciclo de vida de los módulos (Forges), el registro centralizado
  * de logs y la inicialización de componentes administrativos del núcleo.
@@ -689,6 +688,27 @@ interface ForgeInterface
      * @return boolean
      */
     public function get_has_ui_frontend();
+    
+    /**
+     * Flag indicador de que se han creado overrides de core blocks
+     *
+     * @return boolean
+     */
+    public function get_has_core_blocks();
+    
+    /**
+     * Flag indicador de que se han creado configuradores de core blocks
+     *
+     * @return boolean
+     */
+    public function get_has_ui_core_configs();
+
+    /**
+     * Flag indicador de que hay metaboxes de edicion
+     *
+     * @return boolean
+     */
+    public function get_has_metabox();
 
     /**
      * Flag indicador de que declara endpoints api
@@ -1483,7 +1503,7 @@ Archivo: poeticsoft-heart.php
 <?php
 
 /**
- * Plugin Name: Poetic Soft Heart
+ * Plugin Name: Poetic Soft Heart !
  * Plugin URI: https://poeticsoft.com/plugins/poeticsoft-heart
  * Description: Heart of Poeticsoft Plugins EcoSystem
  * Version: 0.0.0

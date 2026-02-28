@@ -29,7 +29,7 @@ abstract class ForgeAPI
     
     /**
      * Envía una respuesta unificada siguiendo el estándar de Poeticsoft Forge.
-     * * @param mixed $data Datos a enviar o mensaje de error.
+     * @param mixed $data Datos a enviar o mensaje de error.
      * @param int $status Código de estado HTTP.
      * @param bool $success Indica si la operación fue exitosa.
      * @return \WP_REST_Response

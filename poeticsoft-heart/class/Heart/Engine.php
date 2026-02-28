@@ -6,7 +6,7 @@ use Poeticsoft\Heart\API\Main as API;
 use Poeticsoft\Heart\Admin\Main as Admin;
 
 /**
- * Motor central del ecosistema Poeticsoft Heart & Forges .
+ * Motor central del ecosistema Poeticsoft Heart & Forges.
  *
  * Gestiona el ciclo de vida de los módulos (Forges), el registro centralizado
  * de logs y la inicialización de componentes administrativos del núcleo.
@@ -73,6 +73,10 @@ class Engine
      */
     private ?string $token = null;
 
+    /** * shortcode for logging
+     */
+    public $log;
+
     /**
      * Prevenir la clonación del objeto para mantener la integridad del Singleton.
      */
@@ -90,23 +94,6 @@ class Engine
     }
 
     /**
-     * Punto de entrada principal para arrancar el motor.
-     *
-     * @param string $pluginfile Ruta absoluta (__FILE__) del plugin que invoca el motor.
-     * @return self La instancia única inicializada.
-     * @throws \RuntimeException Si se intenta ejecutar boot() más de una vez.
-     */
-    public static function boot(string $pluginfile): self
-    {
-        if (null !== self::$instance) {
-            throw new \RuntimeException('Engine ya fue inicializado.');
-        }
-
-        self::$instance = new self($pluginfile);
-        return self::$instance;
-    }
-
-    /**
      * Acceso global a la instancia del motor.
      *
      * @return self Instancia activa del Engine.
@@ -115,7 +102,8 @@ class Engine
     public static function get_instance(): self
     {
         if (null === self::$instance) {
-            throw new \RuntimeException('Engine no ha sido inicializado. Llama a Engine::boot() primero.');
+            
+            self::$instance = new self();
         }
         return self::$instance;
     }
@@ -124,10 +112,15 @@ class Engine
      * Constructor privado. Configura el entorno y las constantes de ruta.
      * * @param string $pluginfile
      */
-    private function __construct(string $pluginfile)
+    public function __construct()
     {
+        
+        $id = 'poeticsoft-heart';
+        $pluginfile = WP_PLUGIN_DIR . '/' . $id . '/' . $id . '.php';
+        
         // Configuración inmutable del entorno
-        $this->id = 'poeticsoft-heart';
+        
+        $this->id = $id;
         $this->version = '0.0.0';
         $this->pluginfile = $pluginfile;
         $this->path = plugin_dir_path($pluginfile);

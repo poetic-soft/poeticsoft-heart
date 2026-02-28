@@ -3,20 +3,24 @@
 namespace Poeticsoft\Heart\API;
 
 use Poeticsoft\Heart\Engine;
-use stdClass;
 
 class Main
 {
     private $engine;
     private $whitelist;
+    private $whitelistcachekeys;
 
     public function __construct(Engine $engine)
     {
-        
+                
         $this->engine = $engine;
         $this->whitelist = [
             'public' => [],
             'logged' => []
+        ];
+        $this->whitelistcachekeys = [
+            'public' => '',
+            'logged' => ''
         ];
     }
 
@@ -26,8 +30,6 @@ class Main
         add_action(
             'rest_api_init',
             function () {
-                
-                $this->engine->logging->log('rest_api_init');
                                 
                 $forges = $this->engine->get_forges();
                 
@@ -37,13 +39,73 @@ class Main
                         
                         $forge_api = $forge->get_api();
                         
-                        $whitelist = $forge_api->get_whitelist();
+                        $namespace = $this->engine->get_id() .
+                        '/' .
+                        $forge->get_id();
                         
-                        $this->engine->logging->log($whitelist);
+                        $whitelists = $forge_api->get_whitelist();
+                        
+                        foreach ($whitelists as $version => $sections) {
                 
+                            foreach ($sections as $section => $types) {
+                                
+                                foreach ($types as $type => $paths) {
+                                    
+                                    foreach ($paths as $path) {
+                                    
+                                        $item = '/wp-json/' . $namespace . '/' . $version . '/' . $section . '/' . $path;
+                            
+                                        $this->whitelist[$type][] = $item;
+                                    }
+                                }
+                            }
+                        }
+                        
+                        /**
+                         * ------------------------------------------------------------------------
+                         * SCHEMA
+                         *
+                         * {
+                         *   "public": [
+                         *      "\/wp-json\/poeticsoft-heart\/forge-base\/v1\/default\/status-a",
+                         *      "\/wp-json\/poeticsoft-heart\/forge-base\/v1\/base\/base\/test\/a"
+                         *  ],
+                         *  "logged": [
+                         *      "\/wp-json\/poeticsoft-heart\/forge-base\/v1\/default\/status-b",
+                         *      "\/wp-json\/poeticsoft-heart\/forge-base\/v1\/base\/base\/test\/b"
+                         *  ]
+                         * }
+                         */
+                                                
+                        // Cache
+                        
+                        foreach ($this->whitelist as $type => $endpoints) {
+                            
+                            $type_regex_parts = array_map(
+                                function ($endpoint) {
+                                    
+                                    $quoted = str_replace('/', '\/', $endpoint);
+                                    
+                                    return str_replace('*', '.*', $quoted);
+                                },
+                                $endpoints
+                            );
+                            $cached_regex_parts = '/^(' . implode('|', $type_regex_parts) . ')$/';
+                            $cachekey = 'poeticsoft_heart_whitelist_' . $type;
+                            wp_cache_set($cachekey, $cached_regex_parts, 'auth', 3600);
+                            
+                            $this->whitelistcachekeys[$type] = $cachekey;
+                        }
+    
+                        
                         $endpoints = $forge_api->get_endpoints();
                         
                         $forge->data['endpoints'] = [];
+                        
+                        // $this->engine->logging->log('------------------------------------------------');
+                        // $this->engine->logging->log('endpoints');
+                        // $this->engine->logging->log('---------------');
+                        // $this->engine->logging->log($this->whitelistcachekeys);
                             
                         foreach ($endpoints as $version => $sections) {
                 
@@ -51,17 +113,16 @@ class Main
                                     
                                 foreach ($routes as $route) {
                                     
-                                    $namespace = $this->engine->get_id() .
+                                    $path = $version .
                                     '/' .
-                                    $forge->get_id() .
-                                    '/' .
-                                    $version;
-                                    
-                                    $path = $section .
+                                    $section .
                                     '/' .
                                     $route['path'];
                                     
-                                    $forge->data['endpoints'][] = $namespace . '/' . $path; // TO DO see in Inspector
+                                    $endpoint = $namespace . '/' . $path;
+                                    $forge->data['endpoints'][] = $endpoint; // TO DO see in Inspector
+                        
+                                    // $this->engine->logging->log($endpoint);
                                     
                                     register_rest_route(
                                         $namespace,
@@ -83,55 +144,58 @@ class Main
         add_filter(
             'rest_authentication_errors',
             function ($result) {
-                
-                return $result;
 
-                // if (!empty($result)) {
+                if (!empty($result)) {
                 
-                //     return $result;
-                // }
+                    return $result;
+                }
+                
+                // TODO organize whitelist by method?
+                // $request_method = sanitize_text_field(wp_unslash($_SERVER['REQUEST_METHOD']));
 
                 $request_uri = sanitize_text_field(wp_unslash($_SERVER['REQUEST_URI']));
-                $request_method = sanitize_text_field(wp_unslash($_SERVER['REQUEST_METHOD']));
                 
-                // $request_uri = $_SERVER['REQUEST_URI'] ?? '';
+                // Public check
                 
-                // foreach ($allowedpublic as $pattern) {
+                $public_cache_key = $this->whitelistcachekeys['public'];
+                $pattern = wp_cache_get($public_cache_key);
+                if (preg_match($pattern, $request_uri)) {
+                    
+                    return $result;
+                }
+                
+                // Logged check 
+                
+                $logged_cache_key = $this->whitelistcachekeys['logged'];
+                $pattern = wp_cache_get($logged_cache_key);
+                if (
+                    is_user_logged_in()
+                    && 
+                    preg_match($pattern, $request_uri)
+                ) {
+                    
+                    return $result;
+                }
 
-                //     $regex = '#^' . str_replace('\*', '.*', preg_quote($pattern, '#')) . '$#';
-                //     if (preg_match($regex, $request_uri)) {
+                if ($this->is_admin_user()) {
 
-                //         return $result;
-
-                //         break;
-                //     }
-                // }
-
-                // if (is_user_logged_in()) {
-
-                //     foreach ($allowedlogedusers as $pattern) {
-
-                //         $regex = '#^' . str_replace('\*', '.*', preg_quote($pattern, '#')) . '$#';
-                //         if (preg_match($regex, $request_uri)) {
-
-                //         return $result;
-
-                //         break;
-                //         }
-                //     }
-
-                //     if ($this->api_isadminuser()) {
-
-                //         return $result;
-                //     }
-                // }
-
-                // return new WP_Error(
-                //     'rest_cannot_access',
-                //     __('REST API restricted access. Needs authentication.'),
-                //     array( 'status' => 401 )
-                // );
+                    return $result;
+                }
+                
+                $this->send_response(
+                    __('REST API restricted access. Needs authentication.'),
+                    401,
+                    false
+                );
             }
         );
+    }
+    
+    private function is_admin_user() {
+  
+        return in_array(
+            'administrator',  
+            wp_get_current_user()->roles
+        );    
     }
 }

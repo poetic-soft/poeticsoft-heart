@@ -40,9 +40,8 @@ if (file_exists(__DIR__ . '/vendor/autoload.php')) {
 
 /**
  * Inicialización del motor principal del plugin.
- * Se utiliza el método estático boot para configurar el Singleton.
  */
-Engine::boot(__FILE__);
+new Engine();
 
 /**
  * Hook de activación.

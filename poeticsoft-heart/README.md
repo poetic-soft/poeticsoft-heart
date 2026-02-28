@@ -6,7 +6,7 @@
 
 **Poeticsoft Heart** es el núcleo inteligente y motor de ejecución para WordPress diseñado por Poeticsoft. Proporciona una infraestructura robusta para la gestión de módulos independientes (Forges), inyección de dependencias y diagnósticos de salud del sistema.
 
-## 🌟 Características Principales
+## 🌟 Características Principales 
 
 - **Service Container**: Gestión centralizada de utilidades mediante inversión de control.
 - **Forge Engine**: Registro dinámico y orquestación de plugins secundarios.
