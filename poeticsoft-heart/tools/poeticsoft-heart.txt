@@ -1,6 +1,6 @@
 ============================================================
 CÓDIGO INTEGRAL DEL PLUGIN: POETICSOFT-HEART
-Generado el: 2026-02-27 12:39:49
+Generado el: 2026-03-01 01:35:40
 ============================================================
 
 class\Heart\API\ForgeAPI.php
@@ -26,6 +26,23 @@ abstract class ForgeAPI
 {
     protected $forge;
     protected $engine;
+    
+    /**
+     * Envía una respuesta unificada siguiendo el estándar de Poeticsoft Forge.
+     * @param mixed $data Datos a enviar o mensaje de error.
+     * @param int $status Código de estado HTTP.
+     * @param bool $success Indica si la operación fue exitosa.
+     * @return \WP_REST_Response
+     */
+    public function send_response(
+        $data,
+        int $status = 200,
+        bool $success = true
+    ): \WP_REST_Response {
+        
+        // Accedemos a la función send_response de la API central a través del Engine
+        return $this->engine->api->send_response($data, $status, $success);
+    }
 
     /**
      * Debe retornar el array de whitelist.
@@ -38,37 +55,9 @@ abstract class ForgeAPI
     abstract public function get_endpoints(): array;
     
     /**
-     * Envía una respuesta unificada siguiendo el estándar de Poeticsoft Forge.
-     * * @param mixed $data Datos a enviar o mensaje de error.
-     * @param int $status Código de estado HTTP.
-     * @param bool $success Indica si la operación fue exitosa.
-     * @return \WP_REST_Response
-     */
-    protected function send_response(
-        $data,
-        int $status = 200,
-        bool $success = true
-    ): \WP_REST_Response {
-        
-        $response = [
-            'user' => get_current_user_id(),
-            'success' => $success,
-            'forge' => $this->forge->get_id(), // Identificamos qué forge responde
-            'data' => $success ? $data : null,
-            'error' => !$success ? $data : null,
-            'meta' => [
-                'timestamp' => time(),
-                'version' => '1.0.0'
-            ]
-        ];
-
-        return new \WP_REST_Response($response, $status);
-    }
-    
-    /**
      * Pueden incorporarse funcionalidades extras para la API de los forges
      *
-     * protected function extra() { }
+     * public function extra() { }
      *
      */
 }
@@ -85,137 +74,337 @@ Archivo: class\Heart\API\Main.php
 
 namespace Poeticsoft\Heart\API;
 
+use Poeticsoft\Heart;
 use Poeticsoft\Heart\Engine;
-use stdClass;
 
 class Main
 {
     private $engine;
     private $whitelist;
+    // private $whitelistcachekeys; // For future Cache Use
+    private $whitelistcompiled;
+    private $is_compiled = false; // Flag para evitar dobles procesos
 
     public function __construct(Engine $engine)
     {
-        
+                        
         $this->engine = $engine;
         $this->whitelist = [
             'public' => [],
             'logged' => []
         ];
+        // $this->whitelistcachekeys = [ // For future Cache Use
+        //     'public' => '',
+        //     'logged' => ''
+        // ];
+        $this->whitelistcompiled = [
+            'public' => '',
+            'logged' => ''
+        ];
     }
 
     public function init()
     {
+        
+        // Registro de rutas
+        add_action('rest_api_init', [$this, 'register_all_forge_endpoints']);
+        
+        // Filtro de autenticación
+        add_filter('rest_authentication_errors', [$this, 'check_rest_authentication']);
+    }
     
-        add_action(
-            'rest_api_init',
-            function () {
+    /**
+     * Compila las whitelists de todos los Forges registrados.
+     * Se puede llamar preventivamente si los datos no están listos.
+     */
+    public function compile_whitelists()
+    {
                 
-                $this->engine->logging->log('rest_api_init');
-                                
-                $forges = $this->engine->get_forges();
+        if ($this->is_compiled) {
+            
+            return;
+        }
+
+        $forges = $this->engine->get_forges();
+
+        foreach ($forges as $forge) {
+            
+            if ($forge->get_has_api()) {
                 
-                foreach ($forges as $forge) {
-                        
-                    if ($forge->get_has_api()) {
-                        
-                        $forge_api = $forge->get_api();
-                        
-                        $whitelist = $forge_api->get_whitelist();
-                        
-                        $this->engine->logging->log($whitelist);
+                $forge_api = $forge->get_api();
+                $whitelists = $forge_api->get_whitelist();
                 
-                        $endpoints = $forge_api->get_endpoints();
+                $namespace = $this->engine->get_id() . '/' . $forge->get_id();
+
+                foreach ($whitelists as $version => $sections) {
+                    
+                    foreach ($sections as $section => $types) {
                         
-                        $forge->data['endpoints'] = [];
+                        foreach ($types as $type => $paths) {
                             
-                        foreach ($endpoints as $version => $sections) {
-                
-                            foreach ($sections as $section => $routes) {
-                                    
-                                foreach ($routes as $route) {
-                                    
-                                    $namespace = $this->engine->get_id() .
-                                    '/' .
-                                    $forge->get_id() .
-                                    '/' .
-                                    $version;
-                                    
-                                    $path = $section .
-                                    '/' .
-                                    $route['path'];
-                                    
-                                    $forge->data['endpoints'][] = $namespace . '/' . $path; // TO DO see in Inspector
-                                    
-                                    register_rest_route(
-                                        $namespace,
-                                        $path,
-                                        [
-                                            'methods'  => $route['methods'],
-                                            'callback' => $route['callback'],
-                                            'permission_callback' => '__return_true'
-                                        ]
-                                    );
-                                }
+                            foreach ($paths as $path) {
+                                
+                                $item = '/wp-json/' .
+                                $namespace .
+                                '/' .
+                                $version .
+                                '/' .
+                                $section .
+                                '/' .
+                                $path;
+                                
+                                $this->whitelist[$type][] = $item;
                             }
                         }
                     }
                 }
             }
+        }
+
+        // Compilación a Regex
+        
+        foreach ($this->whitelist as $type => $endpoints) {
+            
+            if (empty($endpoints)) {
+                
+                $this->whitelistcompiled[$type] = '/^$/'; // Regex que no coincide con nada
+                
+                continue;
+            }
+
+            $type_regex_parts = array_map(
+                function ($endpoint) {
+                
+                    $quoted = str_replace('/', '\/', $endpoint);
+                    
+                    return str_replace('*', '.*', $quoted);
+                },
+                $endpoints
+            );
+
+            $this->whitelistcompiled[$type] = '/^(' . implode('|', $type_regex_parts) . ')$/';
+        }
+
+        $this->is_compiled = true;
+    }
+    
+    public function register_all_forge_endpoints()
+    {
+        
+        $this->compile_whitelists();
+                        
+        $forges = $this->engine->get_forges();
+        
+        foreach ($forges as $forge) {
+                
+            if ($forge->get_has_api()) {
+                
+                $forge_api = $forge->get_api();
+                
+                $namespace = $this->engine->get_id() .
+                '/' .
+                $forge->get_id();
+                                        
+                $endpoints = $forge_api->get_endpoints();
+                
+                $forge->data['endpoints'] = [];
+                    
+                foreach ($endpoints as $version => $sections) {
+        
+                    foreach ($sections as $section => $routes) {
+                            
+                        foreach ($routes as $route) {
+                            
+                            $path = $version .
+                            '/' .
+                            $section .
+                            '/' .
+                            $route['path'];
+                            
+                            $endpoint = $namespace . '/' . $path;
+                            $forge->data['endpoints'][] = $endpoint; // TO DO see in Inspector
+                
+                            // Heart::log($endpoint);
+                            
+                            register_rest_route(
+                                $namespace,
+                                $path,
+                                [
+                                    'methods'  => $route['methods'],
+                                    'callback' => $route['callback'],
+                                    'permission_callback' => '__return_true'
+                                ]
+                            );
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    public function check_rest_authentication($result)
+    {
+        
+        // Heart::log('$result ---------------------------');
+        // Heart::log($result);
+
+        if (!empty($result)) {
+        
+            return $result;
+        }
+        
+        // ¡CLAVE!: Si alguien consulta la seguridad antes de rest_api_init,
+        // forzamos la compilación de la whitelist ahora mismo.
+        if (!$this->is_compiled) {
+            
+            $this->compile_whitelists();
+        }
+        
+        // Heart::log('_________________________________________________');
+        // Heart::log('Whitelist Compiled');
+        // Heart::log('---------------');
+        // Heart::log($this->whitelistcompiled);
+        
+        // TODO organize whitelist by method?
+        // $request_method = sanitize_text_field(wp_unslash($_SERVER['REQUEST_METHOD']));
+
+        $request_uri = sanitize_text_field(wp_unslash($_SERVER['REQUEST_URI']));
+        
+        /**
+         * Forzamos a WordPress a determinar el usuario actual si aún no lo ha hecho.
+         * Esto permite que get_current_user_id() devuelva el valor correcto en este filtro.
+         */
+        
+        wp_validate_auth_cookie();
+        
+        // Admin check
+        
+        // Heart::log('ADMIN ------------------------------------------');
+        // Heart::log($request_uri);
+        // Heart::log($this->is_admin_user());
+
+        if ($this->is_admin_user()) {
+
+            return null;
+        }
+        
+        // Public check
+        
+        // Future use of Cache Redis/MemCache
+        // $public_cache_key = $this->whitelistcachekeys['public'];
+        // $pattern = wp_cache_get($public_cache_key);
+        
+        $pattern = $this->whitelistcompiled['public'];
+        
+        // Heart::log('PUBLIC ------------------------------------------');
+        // Heart::log($request_uri);
+        // Heart::log($pattern);
+        // Heart::log(preg_match($pattern, $request_uri));
+        
+        if (preg_match($pattern, $request_uri)) {
+            
+            return null;
+        }
+        
+        // Logged check
+        
+        // Future use of Cache Redis/MemCache
+        // $logged_cache_key = $this->whitelistcachekeys['logged'];
+        // $pattern = wp_cache_get($logged_cache_key);
+        
+        $pattern = $this->whitelistcompiled['logged'];
+        
+        // Heart::log('LOGGED ------------------------------------------');
+        // Heart::log($request_uri);
+        // Heart::log($pattern);
+        // Heart::log(is_user_logged_in());
+        // Heart::log(preg_match($pattern, $request_uri));
+        
+        if (
+            is_user_logged_in()
+            &&
+            preg_match($pattern, $request_uri)
+        ) {
+            
+            return null;
+        }
+        
+        // Heart::log('ERROR ------------------------------------------');
+        // Heart::log($request_uri);
+        // Heart::log($this->is_admin_user());
+        
+        $message = __('REST API restricted access. Needs authentication.', 'poeticsoft-heart');
+        
+        $response = $this->format_response_data(
+            $message,
+            401,
+            false
         );
         
-        add_filter(
-            'rest_authentication_errors',
-            function ($result) {
-                
-                return $result;
-
-                // if (!empty($result)) {
-                
-                //     return $result;
-                // }
-
-                $request_uri = sanitize_text_field(wp_unslash($_SERVER['REQUEST_URI']));
-                $request_method = sanitize_text_field(wp_unslash($_SERVER['REQUEST_METHOD']));
-                
-                // $request_uri = $_SERVER['REQUEST_URI'] ?? '';
-                
-                // foreach ($allowedpublic as $pattern) {
-
-                //     $regex = '#^' . str_replace('\*', '.*', preg_quote($pattern, '#')) . '$#';
-                //     if (preg_match($regex, $request_uri)) {
-
-                //         return $result;
-
-                //         break;
-                //     }
-                // }
-
-                // if (is_user_logged_in()) {
-
-                //     foreach ($allowedlogedusers as $pattern) {
-
-                //         $regex = '#^' . str_replace('\*', '.*', preg_quote($pattern, '#')) . '$#';
-                //         if (preg_match($regex, $request_uri)) {
-
-                //         return $result;
-
-                //         break;
-                //         }
-                //     }
-
-                //     if ($this->api_isadminuser()) {
-
-                //         return $result;
-                //     }
-                // }
-
-                // return new WP_Error(
-                //     'rest_cannot_access',
-                //     __('REST API restricted access. Needs authentication.'),
-                //     array( 'status' => 401 )
-                // );
-            }
+        return new \WP_Error(
+            'rest_forbidden',
+            $message,
+            $response
         );
+    }
+    
+    private function is_admin_user()
+    {
+  
+        return in_array(
+            'administrator',
+            wp_get_current_user()->roles
+        );
+    }
+    
+    /**
+     * Envía una respuesta unificada siguiendo el estándar de Poeticsoft Forge.
+     * @param mixed $data Datos a enviar o mensaje de error.
+     * @param int $status Código de estado HTTP.
+     * @param bool $success Indica si la operación fue exitosa.
+     * @return \WP_REST_Response
+     */
+    public function send_response(
+        $data,
+        int $status = 200,
+        bool $success = true
+    ): \WP_REST_Response {
+        
+        $response = [
+            'code' => '',       // Compliant with WP_Error response
+            'message' => '',    //
+            'data' => $this->format_response_data(
+                $data,
+                $status,
+                $success
+            )
+        ];
+        
+        return new \WP_REST_Response($response, $status);
+    }
+    
+    private function format_response_data(
+        $data,
+        int $status = 200,
+        bool $success = true
+    ) {
+        
+        $fecha = new \DateTime();
+        $fecha->setTimezone(new \DateTimeZone('Europe/Madrid'));
+        $fecha = $fecha->format('d/m/Y H:i:s');
+        
+        return [
+            'user' => get_current_user_id(),
+            'status' => $status,
+            'success' => $success,
+            'data' => $success ? $data : null,
+            'error' => !$success ? $data : null,
+            'meta' => [
+                'timestampms' => time() * 1000,
+                'fecha' => $fecha,
+                'version' => $this->engine->get_version()
+            ]
+        ];
     }
 }
 
@@ -298,6 +487,7 @@ Archivo: class\Heart\Engine.php
 
 namespace Poeticsoft\Heart;
 
+use Poeticsoft\Heart;
 use Poeticsoft\Heart\API\Main as API;
 use Poeticsoft\Heart\Admin\Main as Admin;
 
@@ -329,9 +519,9 @@ class Engine
      */
     protected Admin $admin;
 
-    /** * @var API Controlador de registro de API endpoints
+    /** * @var API Controlador y funcionalidad compartida de las apis de forges
      */
-    protected API $api;
+    public API $api;
 
     /** * @var Frontend Controlador de procesos de cargas de frontend.
      */
@@ -369,6 +559,10 @@ class Engine
      */
     private ?string $token = null;
 
+    /** * shortcode for logging
+     */
+    public $log;
+
     /**
      * Prevenir la clonación del objeto para mantener la integridad del Singleton.
      */
@@ -386,23 +580,6 @@ class Engine
     }
 
     /**
-     * Punto de entrada principal para arrancar el motor.
-     *
-     * @param string $pluginfile Ruta absoluta (__FILE__) del plugin que invoca el motor.
-     * @return self La instancia única inicializada.
-     * @throws \RuntimeException Si se intenta ejecutar boot() más de una vez.
-     */
-    public static function boot(string $pluginfile): self
-    {
-        if (null !== self::$instance) {
-            throw new \RuntimeException('Engine ya fue inicializado.');
-        }
-
-        self::$instance = new self($pluginfile);
-        return self::$instance;
-    }
-
-    /**
      * Acceso global a la instancia del motor.
      *
      * @return self Instancia activa del Engine.
@@ -411,7 +588,8 @@ class Engine
     public static function get_instance(): self
     {
         if (null === self::$instance) {
-            throw new \RuntimeException('Engine no ha sido inicializado. Llama a Engine::boot() primero.');
+            
+            self::$instance = new self();
         }
         return self::$instance;
     }
@@ -420,10 +598,15 @@ class Engine
      * Constructor privado. Configura el entorno y las constantes de ruta.
      * * @param string $pluginfile
      */
-    private function __construct(string $pluginfile)
+    public function __construct()
     {
+        
+        $id = 'poeticsoft-heart';
+        $pluginfile = WP_PLUGIN_DIR . '/' . $id . '/' . $id . '.php';
+        
         // Configuración inmutable del entorno
-        $this->id = 'poeticsoft-heart';
+        
+        $this->id = $id;
         $this->version = '0.0.0';
         $this->pluginfile = $pluginfile;
         $this->path = plugin_dir_path($pluginfile);
@@ -475,6 +658,12 @@ class Engine
         }
 
         do_action('poeticsoft_heart_booted', $this);
+        
+        /**
+         * DEBUG
+         */
+        // Heart::log('Token ***********************************');
+        // Heart::log($this->get_token());
     }
 
     /**
@@ -1104,11 +1293,23 @@ class Logging
             return false;
         }
 
-        $text = is_string($mensaje) ? $mensaje : wp_json_encode($mensaje, JSON_PRETTY_PRINT);
+        $text = is_string($mensaje) ?
+        $mensaje
+        :
+        json_encode($mensaje, JSON_PRETTY_PRINT);
         $fecha = current_time('Y-m-d H:i:s');
         $entrada = "[{$fecha}] [{$nivel}] [{$forge}]: {$text}" . PHP_EOL;
 
-        if (is_writable(dirname($this->logfile)) || (file_exists($this->logfile) && is_writable($this->logfile))) {
+        if (
+            is_writable(dirname($this->logfile))
+            ||
+            (
+                file_exists($this->logfile)
+                &&
+                is_writable($this->logfile)
+            )
+        ) {
+            
             return (bool) error_log($entrada, 3, $this->logfile);
         }
 
@@ -1216,9 +1417,9 @@ class UI
                 
                                 /**
                                  * DEBUG
-                                $this->engine->logging->log('---------------------------------------------');
-                                $this->engine->logging->log('CATEGORY');
-                                $this->engine->logging->log($posticsoft_heart_category);
+                                Heart::log('---------------------------------------------');
+                                Heart::log('CATEGORY');
+                                Heart::log($posticsoft_heart_category);
                                  */
                             }
                         }
@@ -1259,8 +1460,8 @@ class UI
                             /**
                              * DEBUG
                             $forge_name = $forge->get_name();
-                            $this->engine->logging->log('---------------------------------------------');
-                            $this->engine->logging->log(
+                            Heart::log('---------------------------------------------');
+                            Heart::log(
                                 'registered block ' .
                                 $block_name .
                                 ' en ' .
@@ -1310,7 +1511,7 @@ class UI
         
         /**
          * DEBUG
-        $this->engine->logging->log([
+        Heart::log([
             'enqueue_id' => $enqueue_id,
             'uri' => $forge_uri . '/ui/' . $section . '/main.js',
             'deps' => $deps[$section],
@@ -1495,6 +1696,79 @@ class Updater
 
 ============================================================
 
+class\Heart.php
+----------------------------------------------
+Archivo: class\Heart.php
+----------------------------------------------
+
+<?php
+
+namespace Poeticsoft;
+
+use Poeticsoft\Heart\Engine;
+
+/**
+ * Clase de acceso rápido (Facade) ajustada.
+ * Ubicación: class\Heart.php
+ */
+class Heart
+{
+    /**
+     * Acceso directo al sistema de logs.
+     * Ahora acepta el mensaje y lo envía automáticamente al Engine.
+     *
+     * @param mixed $mensaje Datos a registrar. [cite: 255]
+     * @param string $nivel Categoría del log (INFO, ERROR, DEBUG). [cite: 256]
+     * @return bool
+     */
+    public static function log(
+        $mensaje = null,
+        $nivel = 'INFO',
+        $forge = 'HEART'
+    ) {
+        // Si no se pasa mensaje, seguimos retornando la instancia para mantener compatibilidad
+        if ($mensaje === null) {
+            
+            return Engine::get_instance()->logging;
+        }
+
+        // Si hay mensaje, lo enviamos directamente al servicio de logging del Engine
+        return Engine::get_instance()->logging->log($mensaje, $nivel, $forge);
+    }
+
+    /**
+     * Acceso al gestor de interfaz de usuario (UI).
+     * * @return \Poeticsoft\Heart\UI
+     */
+    public static function ui()
+    {
+        return Engine::get_instance()->ui;
+    }
+
+    /**
+     * Recupera la instancia de un Forge (plugin) específico por su slug.
+     * * @param string $slug Identificador del plugin.
+     * @return \Poeticsoft\Heart\ForgeInterface|null
+     */
+    public static function forge(string $slug)
+    {
+        $engine = Engine::get_instance();
+        return $engine->forges[$slug] ?? null;
+    }
+    
+    /**
+     * Acceso al motor central para operaciones avanzadas.
+     * * @return \Poeticsoft\Heart\Engine
+     */
+    public static function engine()
+    {
+        return Engine::get_instance();
+    }
+}
+
+
+============================================================
+
 poeticsoft-heart.php
 ----------------------------------------------
 Archivo: poeticsoft-heart.php
@@ -1503,7 +1777,7 @@ Archivo: poeticsoft-heart.php
 <?php
 
 /**
- * Plugin Name: Poetic Soft Heart !
+ * Plugin Name: Poetic Soft Heart
  * Plugin URI: https://poeticsoft.com/plugins/poeticsoft-heart
  * Description: Heart of Poeticsoft Plugins EcoSystem
  * Version: 0.0.0
@@ -1542,9 +1816,8 @@ if (file_exists(__DIR__ . '/vendor/autoload.php')) {
 
 /**
  * Inicialización del motor principal del plugin.
- * Se utiliza el método estático boot para configurar el Singleton.
  */
-Engine::boot(__FILE__);
+new Engine();
 
 /**
  * Hook de activación.

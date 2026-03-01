@@ -2,6 +2,7 @@
 
 namespace Poeticsoft\Heart;
 
+use Poeticsoft\Heart;
 use Poeticsoft\Heart\API\Main as API;
 use Poeticsoft\Heart\Admin\Main as Admin;
 
@@ -33,9 +34,9 @@ class Engine
      */
     protected Admin $admin;
 
-    /** * @var API Controlador de registro de API endpoints
+    /** * @var API Controlador y funcionalidad compartida de las apis de forges
      */
-    protected API $api;
+    public API $api;
 
     /** * @var Frontend Controlador de procesos de cargas de frontend.
      */
@@ -172,6 +173,12 @@ class Engine
         }
 
         do_action('poeticsoft_heart_booted', $this);
+        
+        /**
+         * DEBUG
+         */
+        // Heart::log('Token ***********************************');
+        // Heart::log($this->get_token());
     }
 
     /**

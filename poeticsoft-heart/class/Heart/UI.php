@@ -83,9 +83,9 @@ class UI
                 
                                 /**
                                  * DEBUG
-                                $this->engine->logging->log('---------------------------------------------');
-                                $this->engine->logging->log('CATEGORY');
-                                $this->engine->logging->log($posticsoft_heart_category);
+                                Heart::log('---------------------------------------------');
+                                Heart::log('CATEGORY');
+                                Heart::log($posticsoft_heart_category);
                                  */
                             }
                         }
@@ -126,8 +126,8 @@ class UI
                             /**
                              * DEBUG
                             $forge_name = $forge->get_name();
-                            $this->engine->logging->log('---------------------------------------------');
-                            $this->engine->logging->log(
+                            Heart::log('---------------------------------------------');
+                            Heart::log(
                                 'registered block ' .
                                 $block_name .
                                 ' en ' .
@@ -177,7 +177,7 @@ class UI
         
         /**
          * DEBUG
-        $this->engine->logging->log([
+        Heart::log([
             'enqueue_id' => $enqueue_id,
             'uri' => $forge_uri . '/ui/' . $section . '/main.js',
             'deps' => $deps[$section],

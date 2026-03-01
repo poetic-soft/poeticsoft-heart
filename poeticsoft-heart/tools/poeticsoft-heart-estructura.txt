@@ -1,21 +1,22 @@
 ========================================
 ESTRUCTURA DEL PROYECTO: POETICSOFT-HEART
-Generado el: 2026-02-27 12:39:49
+Generado el: 2026-03-01 01:35:40
 ========================================
 
 ├── class
-│   └── Heart
-│       ├── API
-│       │   ├── ForgeAPI.php
-│       │   └── Main.php
-│       ├── Admin
-│       │   └── Main.php
-│       ├── Engine.php
-│       ├── ForgeInterface.php
-│       ├── Inspector.php
-│       ├── Logging.php
-│       ├── UI.php
-│       └── Updater.php
+│   ├── Heart
+│   │   ├── API
+│   │   │   ├── ForgeAPI.php
+│   │   │   └── Main.php
+│   │   ├── Admin
+│   │   │   └── Main.php
+│   │   ├── Engine.php
+│   │   ├── ForgeInterface.php
+│   │   ├── Inspector.php
+│   │   ├── Logging.php
+│   │   ├── UI.php
+│   │   └── Updater.php
+│   └── Heart.php
 ├── composer.json
 ├── poeticsoft-heart.php
 └── uninstall.php

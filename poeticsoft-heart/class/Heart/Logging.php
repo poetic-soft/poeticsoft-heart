@@ -87,11 +87,23 @@ class Logging
             return false;
         }
 
-        $text = is_string($mensaje) ? $mensaje : wp_json_encode($mensaje, JSON_PRETTY_PRINT);
+        $text = is_string($mensaje) ?
+        $mensaje
+        :
+        json_encode($mensaje, JSON_PRETTY_PRINT);
         $fecha = current_time('Y-m-d H:i:s');
         $entrada = "[{$fecha}] [{$nivel}] [{$forge}]: {$text}" . PHP_EOL;
 
-        if (is_writable(dirname($this->logfile)) || (file_exists($this->logfile) && is_writable($this->logfile))) {
+        if (
+            is_writable(dirname($this->logfile))
+            ||
+            (
+                file_exists($this->logfile)
+                &&
+                is_writable($this->logfile)
+            )
+        ) {
+            
             return (bool) error_log($entrada, 3, $this->logfile);
         }
 
