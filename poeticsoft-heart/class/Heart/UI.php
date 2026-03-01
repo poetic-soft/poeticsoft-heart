@@ -83,10 +83,10 @@ class UI
                 
                                 /**
                                  * DEBUG
-                                Heart::log('---------------------------------------------');
-                                Heart::log('CATEGORY');
-                                Heart::log($posticsoft_heart_category);
                                  */
+                                // $this->engine->logging->log('---------------------------------------------');
+                                // $this->engine->logging->log('CATEGORY');
+                                // $this->engine->logging->log($posticsoft_heart_category);
                             }
                         }
 
@@ -99,7 +99,7 @@ class UI
                 $forges = $this->engine->get_forges();
                 foreach ($forges as $forge_id => $forge) {
                     
-                    if ($forge->get_has_blocks()) {
+                    if ($forge->get_has_ui_blocks()) {
                         
                         $forge_path = $forge->get_plugin_path();
                         $blocks_path = $forge_path . '/block';
@@ -125,17 +125,17 @@ class UI
                             
                             /**
                              * DEBUG
-                            $forge_name = $forge->get_name();
-                            Heart::log('---------------------------------------------');
-                            Heart::log(
-                                'registered block ' .
-                                $block_name .
-                                ' en ' .
-                                'Poeticsoft ' . $forge_name .
-                                ' -> ' .
-                                ( $registered ? 'SI' : 'NO')
-                            );
                              */
+                            // $forge_name = $forge->get_name();
+                            // $this->engine->logging->log('---------------------------------------------');
+                            // $this->engine->logging->log(
+                            //     'registered block ' .
+                            //     $block_name .
+                            //     ' en ' .
+                            //     'Poeticsoft ' . $forge_name .
+                            //     ' -> ' .
+                            //     ( $registered ? 'SI' : 'NO')
+                            // );
                         }
                     }
                 }
@@ -177,13 +177,13 @@ class UI
         
         /**
          * DEBUG
-        Heart::log([
-            'enqueue_id' => $enqueue_id,
-            'uri' => $forge_uri . '/ui/' . $section . '/main.js',
-            'deps' => $deps[$section],
-            'path' => $forge_path . '/ui/' . $section . '/main.js'
-        ]);
-        */
+         */
+        // $this->engine->logging->log([
+        //     'enqueue_id' => $enqueue_id,
+        //     'uri' => $forge_uri . '/ui/' . $section . '/main.js',
+        //     'deps' => $deps[$section],
+        //     'path' => $forge_path . '/ui/' . $section . '/main.js'
+        // ]);
     
         wp_enqueue_script(
             $enqueue_id,
@@ -252,8 +252,43 @@ class UI
     }
     
     /**
-     * Lanza los procesos de carga para los languages
-     * y assets y blocks de los Forges
+     * Registra custom renders para core blocks
+     *
+     * @since 0.0.0
+     */
+    private function forges_register_core_blocks_render()
+    {
+        
+        $forges = $this->engine->get_forges();
+        foreach ($forges as $forge_id => $forge) {
+            
+            if ($forge->get_has_ui_core_blocks()) {
+                
+                $forge_core_blocks = $forge->core_blocks->get_core_blocks();
+                
+                foreach ($forge_core_blocks as $block_name => $forge_core_block) {
+                    
+                    $block_render = 'render_block_' . $block_name;
+                    
+                    $this->engine->logging->log($block_render);
+                    
+                    add_filter(
+                        $block_render,
+                        [$forge_core_block, 'render'],
+                        10,
+                        $forge_core_block->render_param_count
+                    );
+                }
+            }
+        }
+    }
+    
+    /**
+     * Lanza los procesos de carga para
+     * - languages
+     * - assets
+     * - blocks
+     * - coreblocks
      *
      * @since 0.0.0
      */
@@ -284,5 +319,12 @@ class UI
         
         // Assets del frontend (Scripts & Styles)
         $this->forges_enqueue_ui_frontend();
+    }
+    
+    public function register_forges_parts()
+    {
+        
+        // Render de core blocks
+        $this->forges_register_core_blocks_render();
     }
 }

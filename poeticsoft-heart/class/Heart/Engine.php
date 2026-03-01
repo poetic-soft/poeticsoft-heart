@@ -174,6 +174,8 @@ class Engine
 
         do_action('poeticsoft_heart_booted', $this);
         
+        $this->ui->register_forges_parts();
+        
         /**
          * DEBUG
          */

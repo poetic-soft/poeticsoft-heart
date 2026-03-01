@@ -68,7 +68,7 @@ interface ForgeInterface
      *
      * @return boolean
      */
-    public function get_has_blocks();
+    public function get_has_ui_blocks();
 
     /**
      * Flag indicador de assets (scripts & styles) de admin para cargar
@@ -89,7 +89,7 @@ interface ForgeInterface
      *
      * @return boolean
      */
-    public function get_has_core_blocks();
+    public function get_has_ui_core_blocks();
     
     /**
      * Flag indicador de que se han creado configuradores de core blocks
@@ -103,7 +103,7 @@ interface ForgeInterface
      *
      * @return boolean
      */
-    public function get_has_metabox();
+    public function get_has_ui_metabox();
 
     /**
      * Flag indicador de que declara endpoints api
