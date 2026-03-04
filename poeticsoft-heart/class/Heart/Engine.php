@@ -134,15 +134,12 @@ class Engine
         $this->logging = new Logging($this);
         
         // Registra Endpoints de api
-        
         $this->api->init();
         
-        // Registra hooks y filtros de UI
-        
+        // Registra hooks y filtros de UI antes de inicializar los forges
         $this->ui->init();
         
         // Hook registro de Forges
-        
         add_action(
             'plugins_loaded', // (Hack favicon.ico for single trig)
             [$this, 'plugins_loaded']
@@ -174,6 +171,9 @@ class Engine
 
         do_action('poeticsoft_heart_booted', $this);
         
+        /**
+         * Procesos en forges que necsitan que el forge esté inicializado
+         */
         $this->ui->register_forges_parts();
         
         /**

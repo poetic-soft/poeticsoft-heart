@@ -2,6 +2,8 @@
 
 namespace Poeticsoft\Heart;
 
+use Poeticsoft\Heart as Heart;
+
 /**
  * Clase UI - procesos relacionados son inteface de usuario
  *
@@ -70,7 +72,7 @@ class UI
                         $forges = $this->engine->get_forges();
                         foreach ($forges as $forge_id => $forge) {
                         
-                            if ($forge->get_has_blocks()) {
+                            if ($forge->get_has_ui_blocks()) {
                             
                                 $forge_name = $forge->get_name();
                             
@@ -84,9 +86,9 @@ class UI
                                 /**
                                  * DEBUG
                                  */
-                                // $this->engine->logging->log('---------------------------------------------');
-                                // $this->engine->logging->log('CATEGORY');
-                                // $this->engine->logging->log($posticsoft_heart_category);
+                                // Heart::log('---------------------------------------------');
+                                // Heart::log('CATEGORY');
+                                // Heart::log($posticsoft_heart_category);
                             }
                         }
 
@@ -264,23 +266,60 @@ class UI
             
             if ($forge->get_has_ui_core_blocks()) {
                 
-                $forge_core_blocks = $forge->core_blocks->get_core_blocks();
+                $forge_core_block = $forge->get_core_block();
+                $forge_core_blocks = $forge_core_block->get_core_blocks();
                 
                 foreach ($forge_core_blocks as $block_name => $forge_core_block) {
                     
                     $block_render = 'render_block_' . $block_name;
                     
-                    $this->engine->logging->log($block_render);
-                    
                     add_filter(
                         $block_render,
                         [$forge_core_block, 'render'],
                         10,
-                        $forge_core_block->render_param_count
+                        2
                     );
                 }
             }
         }
+    }
+    
+    /**
+     * Registra los metaboxes de los forges
+     *
+     * @since 0.0.0
+     */
+    private function forges_add_ui_meta_boxes()
+    {
+        
+        add_action(
+            'add_meta_boxes',
+            function () {
+                
+                $forges = $this->engine->get_forges();
+                foreach ($forges as $forge_id => $forge) {
+                    
+                    if ($forge->get_has_ui_meta_boxes()) {
+                        
+                        $forge_meta_box = $forge->get_meta_box();
+                        $forge_meta_boxes = $forge_meta_box->get_meta_boxes();
+                        
+                        foreach ($forge_meta_boxes as $forge_meta_box) {
+                                                    
+                            add_meta_box(
+                                $forge_meta_box->id,
+                                $forge_meta_box->title,
+                                [$forge_meta_box, 'callback'],
+                                $forge_meta_box->screen,
+                                $forge_meta_box->context,
+                                $forge_meta_box->priority,
+                                $forge_meta_box->callback_args,
+                            );
+                        }
+                    }
+                }
+            }
+        );
     }
     
     /**
@@ -319,12 +358,15 @@ class UI
         
         // Assets del frontend (Scripts & Styles)
         $this->forges_enqueue_ui_frontend();
+        
+        // Metaboxes
+        $this->forges_add_ui_meta_boxes();
     }
     
     public function register_forges_parts()
     {
-        
-        // Render de core blocks
+                
+        // Render de core blocks after forges init
         $this->forges_register_core_blocks_render();
     }
 }

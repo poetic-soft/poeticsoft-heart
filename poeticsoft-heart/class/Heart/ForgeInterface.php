@@ -20,6 +20,12 @@ interface ForgeInterface
      * @return void
      */
     public function init(Engine $engine);
+    
+    /**
+     * ------------------------------------------------------------------------
+     * Funcionalidades
+     *
+     */
 
     /**
      * Obtiene el id del bloque para construccion de identificadores
@@ -62,13 +68,12 @@ interface ForgeInterface
      * @return string
      */
     public function get_plugin_uri();
-
+    
     /**
-     * Flag indicador de que hay blocks para registrar
+     * ------------------------------------------------------------------------
+     * Funcionalidades
      *
-     * @return boolean
      */
-    public function get_has_ui_blocks();
 
     /**
      * Flag indicador de assets (scripts & styles) de admin para cargar
@@ -83,6 +88,13 @@ interface ForgeInterface
      * @return boolean
      */
     public function get_has_ui_frontend();
+
+    /**
+     * Flag indicador de que hay blocks para registrar
+     *
+     * @return boolean
+     */
+    public function get_has_ui_blocks();
     
     /**
      * Flag indicador de que se han creado overrides de core blocks
@@ -103,7 +115,7 @@ interface ForgeInterface
      *
      * @return boolean
      */
-    public function get_has_ui_metabox();
+    public function get_has_ui_meta_boxes();
 
     /**
      * Flag indicador de que declara endpoints api

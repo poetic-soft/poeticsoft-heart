@@ -1,6 +1,6 @@
 ============================================================
 CÓDIGO INTEGRAL DEL PLUGIN: POETICSOFT-HEART
-Generado el: 2026-03-01 02:57:58
+Generado el: 2026-03-04 00:40:37
 ============================================================
 
 class\Heart\API\ForgeAPI.php
@@ -619,15 +619,12 @@ class Engine
         $this->logging = new Logging($this);
         
         // Registra Endpoints de api
-        
         $this->api->init();
         
-        // Registra hooks y filtros de UI
-        
+        // Registra hooks y filtros de UI antes de inicializar los forges
         $this->ui->init();
         
         // Hook registro de Forges
-        
         add_action(
             'plugins_loaded', // (Hack favicon.ico for single trig)
             [$this, 'plugins_loaded']
@@ -659,6 +656,9 @@ class Engine
 
         do_action('poeticsoft_heart_booted', $this);
         
+        /**
+         * Procesos en forges que necsitan que el forge esté inicializado
+         */
         $this->ui->register_forges_parts();
         
         /**
@@ -816,6 +816,12 @@ interface ForgeInterface
      * @return void
      */
     public function init(Engine $engine);
+    
+    /**
+     * ------------------------------------------------------------------------
+     * Funcionalidades
+     *
+     */
 
     /**
      * Obtiene el id del bloque para construccion de identificadores
@@ -858,13 +864,12 @@ interface ForgeInterface
      * @return string
      */
     public function get_plugin_uri();
-
+    
     /**
-     * Flag indicador de que hay blocks para registrar
+     * ------------------------------------------------------------------------
+     * Funcionalidades
      *
-     * @return boolean
      */
-    public function get_has_ui_blocks();
 
     /**
      * Flag indicador de assets (scripts & styles) de admin para cargar
@@ -879,6 +884,13 @@ interface ForgeInterface
      * @return boolean
      */
     public function get_has_ui_frontend();
+
+    /**
+     * Flag indicador de que hay blocks para registrar
+     *
+     * @return boolean
+     */
+    public function get_has_ui_blocks();
     
     /**
      * Flag indicador de que se han creado overrides de core blocks
@@ -899,7 +911,7 @@ interface ForgeInterface
      *
      * @return boolean
      */
-    public function get_has_ui_metabox();
+    public function get_has_ui_meta_boxes();
 
     /**
      * Flag indicador de que declara endpoints api
@@ -1338,6 +1350,8 @@ Archivo: class\Heart\UI.php
 
 namespace Poeticsoft\Heart;
 
+use Poeticsoft\Heart as Heart;
+
 /**
  * Clase UI - procesos relacionados son inteface de usuario
  *
@@ -1406,7 +1420,7 @@ class UI
                         $forges = $this->engine->get_forges();
                         foreach ($forges as $forge_id => $forge) {
                         
-                            if ($forge->get_has_blocks()) {
+                            if ($forge->get_has_ui_blocks()) {
                             
                                 $forge_name = $forge->get_name();
                             
@@ -1420,9 +1434,9 @@ class UI
                                 /**
                                  * DEBUG
                                  */
-                                // $this->engine->logging->log('---------------------------------------------');
-                                // $this->engine->logging->log('CATEGORY');
-                                // $this->engine->logging->log($posticsoft_heart_category);
+                                // Heart::log('---------------------------------------------');
+                                // Heart::log('CATEGORY');
+                                // Heart::log($posticsoft_heart_category);
                             }
                         }
 
@@ -1600,7 +1614,8 @@ class UI
             
             if ($forge->get_has_ui_core_blocks()) {
                 
-                $forge_core_blocks = $forge->core_blocks->get_core_blocks();
+                $forge_core_block = $forge->get_core_block();
+                $forge_core_blocks = $forge_core_block->get_core_blocks();
                 
                 foreach ($forge_core_blocks as $block_name => $forge_core_block) {
                     
@@ -1608,11 +1623,51 @@ class UI
                     
                     add_filter(
                         $block_render,
-                        $forge_core_block
+                        [$forge_core_block, 'render'],
+                        10,
+                        2
                     );
                 }
             }
         }
+    }
+    
+    /**
+     * Registra los metaboxes de los forges
+     *
+     * @since 0.0.0
+     */
+    private function forges_add_ui_meta_boxes()
+    {
+        
+        add_action(
+            'add_meta_boxes',
+            function () {
+                
+                $forges = $this->engine->get_forges();
+                foreach ($forges as $forge_id => $forge) {
+                    
+                    if ($forge->get_has_ui_meta_boxes()) {
+                        
+                        $forge_meta_box = $forge->get_meta_box();
+                        $forge_meta_boxes = $forge_meta_box->get_meta_boxes();
+                        
+                        foreach ($forge_meta_boxes as $forge_meta_box) {
+                                                    
+                            add_meta_box(
+                                $forge_meta_box->id,
+                                $forge_meta_box->title,
+                                [$forge_meta_box, 'callback'],
+                                $forge_meta_box->screen,
+                                $forge_meta_box->context,
+                                $forge_meta_box->priority,
+                                $forge_meta_box->callback_args,
+                            );
+                        }
+                    }
+                }
+            }
+        );
     }
     
     /**
@@ -1651,12 +1706,15 @@ class UI
         
         // Assets del frontend (Scripts & Styles)
         $this->forges_enqueue_ui_frontend();
+        
+        // Metaboxes
+        $this->forges_add_ui_meta_boxes();
     }
     
     public function register_forges_parts()
     {
-        
-        // Render de core blocks
+                
+        // Render de core blocks after forges init
         $this->forges_register_core_blocks_render();
     }
 }
