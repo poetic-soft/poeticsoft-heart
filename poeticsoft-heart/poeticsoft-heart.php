@@ -22,47 +22,28 @@
 
 namespace Poeticsoft;
 
-use Poeticsoft\Heart\Engine;
+use Poeticsoft\Heart\main as Heart;
 
-/**
- * Verificación de seguridad: Evitar acceso directo al archivo.
- */
 if (!defined('ABSPATH')) {
     exit;
 }
 
-/**
- * Carga del autoloader de Composer.
- */
 if (file_exists(__DIR__ . '/vendor/autoload.php')) {
     require_once __DIR__ . '/vendor/autoload.php';
 }
 
-/**
- * Inicialización del motor principal del plugin.
- */
-new Engine();
+new Heart();
 
-/**
- * Hook de activación.
- *
- * Se ejecuta al activar el plugin. Delega la lógica al motor central.
- */
 register_activation_hook(
     __FILE__,
     function () {
-        Engine::activate();
+        Heart::activate();
     }
 );
 
-/**
- * Hook de desactivación.
- *
- * Se ejecuta al desactivar el plugin. Limpia cachés y estados temporales.
- */
 register_deactivation_hook(
     __FILE__,
     function () {
-        Engine::deactivate();
+        Heart::deactivate();
     }
 );

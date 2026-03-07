@@ -2,57 +2,35 @@
 
 namespace Poeticsoft\Heart\Admin;
 
-use Poeticsoft\Heart\Engine;
-
-/**
- * Clase Admin - Gestor de la interfaz administrativa.
- *
- * Se encarga de registrar los menús, notices y hooks específicos
- * del área de administración de WordPress.
- *
- * @package Poeticsoft\Heart
- * @since 0.0.0
- */
+use Poeticsoft\Heart\Main as Heart;
+use Poeticsoft\Heart\Admin\Dashboard;
+    
 class Main
 {
-    /**
-     * Instancia del motor principal.
-     *
-     * @var Engine
-     */
-    private $engine;
+    // -------------------------------------------------------------------------------
+    
+    public $heart;
+    public $dashboard;
+    private ?string $token = null;
 
-    /**
-     * Constructor de la clase Admin.
-     *
-     * @param Engine $engine Inyección de la instancia del motor.
-     */
-    public function __construct(Engine $engine)
+    // -------------------------------------------------------------------------------
+    
+    public function __construct(Heart $heart)
     {
-        $this->engine = $engine;
+        $this->heart = $heart;
 
-        // Registramos los enlaces en la tabla de plugins (como "Diagnóstico")
-        add_filter(
-            'plugin_action_links_' . $this->engine->get_basename(),
-            [$this->engine->inspector, 'add_action_link']
-        );
-
-        // Hook para mostrar el panel de diagnóstico si se solicita
-        add_action(
-            'admin_notices',
-            [$this->engine->inspector, 'render_diagnostic_panel']
-        );
-
-        // Aquí podrías añadir más hooks administrativos
-        // add_action('admin_menu', [$this, 'add_admin_menu']);
+        $this->dashboard = new Dashboard($this);
     }
-
-    /**
-     * Ejemplo de método para añadir un menú (opcional para el futuro).
-     * * @return void
-     */
-    public function add_admin_menu()
+    
+    // -------------------------------------------------------------------------------
+    
+    public function get_token(): string
     {
-        // Lógica para add_menu_page() si fuera necesario
+        if (null === $this->token) {
+            
+            $this->token = wp_create_nonce('wp_rest');
+        }
+
+        return $this->token;
     }
 }

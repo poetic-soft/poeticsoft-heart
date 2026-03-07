@@ -1,47 +1,31 @@
 <?php
 
-namespace Poeticsoft\Heart;
+namespace Poeticsoft\Heart\Admin;
 
-/**
- * Clase Inspector - Diagnóstico y utilidades del sistema.
- */
+use Poeticsoft\Heart\Admin\Main as Admin;
+
 class Inspector
 {
-    /**
-     * Instancia del motor principal.
-     *
-     * @var Engine
-     */
-    private $engine;
+    private $heart;
+    private $admin;
 
-    /**
-     * Constructor de la clase Inspector.
-     *
-     * @param Engine $heart Inyección de la instancia del motor.
-     */
-    public function __construct(Engine $engine)
+    public function __construct(Admin $admin)
     {
-        // Heart
-        $this->engine = $engine;
+        
+        $this->admin = $admin;
+        $this->heart = $admin->heart;
     }
 
-    /**
-     * Realiza tests de diagnóstico básicos del entorno.
-     *
-     * @return array Resumen de estados con iconos.
-     */
     private function run_diagnostic(): array
     {
         global $wp_version;
         $results = [];
 
-        // Comprobaciones de integridad del núcleo
-        $results['Engine']    = class_exists('\Poeticsoft\Heart\Engine') ? '✅' : '❌';
-        $results['Singleton'] = ($this->engine === Engine::get_instance()) ? '✅' : '❌';
-        $results['Forges']    = '📦 ' . count($this->engine->get_forges());
+        $results['Heart']    = class_exists('\Poeticsoft\Heart\Heart') ? '✅' : '❌';
+        $results['Singleton'] = ($this->heart === Heart::get_instance()) ? '✅' : '❌';
+        $results['Forges']    = '📦 ' . count($this->heart->get_forges());
 
-        // Verificación del sistema de Logging
-        $logfile = $this->engine->logging->get_logfile();
+        $logfile = $this->heart->get_logfile();
 
         if (empty($logfile)) {
             
@@ -79,8 +63,8 @@ class Inspector
             return;
         }
 
-        // VALIDACIÓN CENTRALIZADA: Usamos el token del Engine
-        $token = $this->engine->get_token();
+        // VALIDACIÓN CENTRALIZADA: Usamos el token del Heart
+        $token = $this->heart->get_token();
 
         if (
             !isset($_GET['_wpnonce'])
@@ -92,7 +76,7 @@ class Inspector
         }
 
         $report = $this->run_diagnostic();
-        $forges = $this->engine->get_forges();
+        $forges = $this->heart->forge->get_forges();
         $forges = array_map(
             function ($forge) {
                 
@@ -261,10 +245,10 @@ class Inspector
     public function add_action_link(array $links): array
     {
         
-        $engine  = Engine::get_instance();
+        $heart  = Heart::get_instance();
         
         // Usamos el Master Nonce para construir la URL manualmente
-        $token = $engine->get_token();
+        $token = $heart->get_token();
         
         $url   = admin_url('?test_forge=1&_wpnonce=' . $token);
 
