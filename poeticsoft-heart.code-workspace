@@ -1,0 +1,19 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+  "settings": {
+    "emeraldwalk.runonsave": {
+      "autoClearConsole": true,
+      "commands": [
+        {
+          "match": ".\\poeticsoft-heart\\.*", 
+          "isShellCommand": true,
+              "cmd": "xcopy \"${workspaceFolder}\\poeticsoft-heart\\*\" \"G:\\local.sites\\heart\\app\\public\\wp-content\\plugins\\poeticsoft-heart\\\" /s /e /y /i /d && powershell -Command \"$wshell = New-Object -ComObject wscript.shell; if($wshell.AppActivate('Chrome')){ Sleep 1; $wshell.SendKeys('{F5}') }\""
+        }
+      ]
+    }
+  }
+}

@@ -1,324 +1,63 @@
 ============================================================
 CÓDIGO INTEGRAL DEL PLUGIN: POETICSOFT-HEART
-Generado el: 2026-03-04 00:40:37
+Generado el: 2026-03-07 00:12:05
 ============================================================
 
-class\Heart\API\ForgeAPI.php
+class\Heart\API\Auth.php
 ----------------------------------------------
-Archivo: class\Heart\API\ForgeAPI.php
+Archivo: class\Heart\API\Auth.php
 ----------------------------------------------
 
 <?php
 
 namespace Poeticsoft\Heart\API;
 
-use Poeticsoft\Heart\Engine;
-use Poeticsoft\Heart\ForgeInterface;
+use Poeticsoft\Heart\API\Main as API;
 
-/**
- * Plantilla para la API de cada forge
- * Se ampliará con funcionalidades extra si es necesario
- * evitando modificar la api de cada forge que sólo se dedica a codificar endpoints
- *
- * @since 0.0.0
- */
-abstract class ForgeAPI
+class Auth
 {
-    protected $forge;
-    protected $engine;
+    protected $api;
+    protected $heart;
     
-    /**
-     * Envía una respuesta unificada siguiendo el estándar de Poeticsoft Forge.
-     * @param mixed $data Datos a enviar o mensaje de error.
-     * @param int $status Código de estado HTTP.
-     * @param bool $success Indica si la operación fue exitosa.
-     * @return \WP_REST_Response
-     */
-    public function send_response(
-        $data,
-        int $status = 200,
-        bool $success = true
-    ): \WP_REST_Response {
-        
-        // Accedemos a la función send_response de la API central a través del Engine
-        return $this->engine->api->send_response($data, $status, $success);
-    }
-
-    /**
-     * Debe retornar el array de whitelist.
-     */
-    abstract public function get_whitelist(): array;
-
-    /**
-     * Debe retornar el array de configuración de endpoints.
-     */
-    abstract public function get_endpoints(): array;
-    
-    /**
-     * Pueden incorporarse funcionalidades extras para la API de los forges
-     *
-     * public function extra() { }
-     *
-     */
-}
-
-
-============================================================
-
-class\Heart\API\Main.php
-----------------------------------------------
-Archivo: class\Heart\API\Main.php
-----------------------------------------------
-
-<?php
-
-namespace Poeticsoft\Heart\API;
-
-use Poeticsoft\Heart;
-use Poeticsoft\Heart\Engine;
-
-class Main
-{
-    private $engine;
-    private $whitelist;
-    // private $whitelistcachekeys; // For future Cache Use
-    private $whitelistcompiled;
-    private $is_compiled = false; // Flag para evitar dobles procesos
-
-    public function __construct(Engine $engine)
+    public function __construct(API $api)
     {
-                        
-        $this->engine = $engine;
-        $this->whitelist = [
-            'public' => [],
-            'logged' => []
-        ];
-        // $this->whitelistcachekeys = [ // For future Cache Use
-        //     'public' => '',
-        //     'logged' => ''
-        // ];
-        $this->whitelistcompiled = [
-            'public' => '',
-            'logged' => ''
-        ];
-    }
-
-    public function init()
-    {
+        $this->api = $api;
+        $this->heart = $api->heart;
         
-        // Registro de rutas
-        add_action('rest_api_init', [$this, 'register_all_forge_endpoints']);
-        
-        // Filtro de autenticación
-        add_filter('rest_authentication_errors', [$this, 'check_rest_authentication']);
-    }
-    
-    /**
-     * Compila las whitelists de todos los Forges registrados.
-     * Se puede llamar preventivamente si los datos no están listos.
-     */
-    public function compile_whitelists()
-    {
-                
-        if ($this->is_compiled) {
-            
-            return;
-        }
-
-        $forges = $this->engine->get_forges();
-
-        foreach ($forges as $forge) {
-            
-            if ($forge->get_has_api()) {
-                
-                $forge_api = $forge->get_api();
-                $whitelists = $forge_api->get_whitelist();
-                
-                $namespace = $this->engine->get_id() . '/' . $forge->get_id();
-
-                foreach ($whitelists as $version => $sections) {
-                    
-                    foreach ($sections as $section => $types) {
-                        
-                        foreach ($types as $type => $paths) {
-                            
-                            foreach ($paths as $path) {
-                                
-                                $item = '/wp-json/' .
-                                $namespace .
-                                '/' .
-                                $version .
-                                '/' .
-                                $section .
-                                '/' .
-                                $path;
-                                
-                                $this->whitelist[$type][] = $item;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        // Compilación a Regex
-        
-        foreach ($this->whitelist as $type => $endpoints) {
-            
-            if (empty($endpoints)) {
-                
-                $this->whitelistcompiled[$type] = '/^$/'; // Regex que no coincide con nada
-                
-                continue;
-            }
-
-            $type_regex_parts = array_map(
-                function ($endpoint) {
-                
-                    $quoted = str_replace('/', '\/', $endpoint);
-                    
-                    return str_replace('*', '.*', $quoted);
-                },
-                $endpoints
-            );
-
-            $this->whitelistcompiled[$type] = '/^(' . implode('|', $type_regex_parts) . ')$/';
-        }
-
-        $this->is_compiled = true;
-    }
-    
-    public function register_all_forge_endpoints()
-    {
-        
-        $this->compile_whitelists();
-                        
-        $forges = $this->engine->get_forges();
-        
-        foreach ($forges as $forge) {
-                
-            if ($forge->get_has_api()) {
-                
-                $forge_api = $forge->get_api();
-                
-                $namespace = $this->engine->get_id() .
-                '/' .
-                $forge->get_id();
-                                        
-                $endpoints = $forge_api->get_endpoints();
-                
-                $forge->data['endpoints'] = [];
-                    
-                foreach ($endpoints as $version => $sections) {
-        
-                    foreach ($sections as $section => $routes) {
-                            
-                        foreach ($routes as $route) {
-                            
-                            $path = $version .
-                            '/' .
-                            $section .
-                            '/' .
-                            $route['path'];
-                            
-                            $endpoint = $namespace . '/' . $path;
-                            $forge->data['endpoints'][] = $endpoint; // TO DO see in Inspector
-                
-                            // Heart::log($endpoint);
-                            
-                            register_rest_route(
-                                $namespace,
-                                $path,
-                                [
-                                    'methods'  => $route['methods'],
-                                    'callback' => $route['callback'],
-                                    'permission_callback' => '__return_true'
-                                ]
-                            );
-                        }
-                    }
-                }
-            }
-        }
+        add_filter(
+            'rest_authentication_errors',
+            [
+                $this,
+                'check_rest_authentication'
+            ]
+        );
     }
     
     public function check_rest_authentication($result)
     {
         
-        // Heart::log('$result ---------------------------');
-        // Heart::log($result);
-
         if (!empty($result)) {
         
             return $result;
         }
         
-        // ¡CLAVE!: Si alguien consulta la seguridad antes de rest_api_init,
-        // forzamos la compilación de la whitelist ahora mismo.
-        if (!$this->is_compiled) {
-            
-            $this->compile_whitelists();
-        }
-        
-        // Heart::log('_________________________________________________');
-        // Heart::log('Whitelist Compiled');
-        // Heart::log('---------------');
-        // Heart::log($this->whitelistcompiled);
-        
-        // TODO organize whitelist by method?
-        // $request_method = sanitize_text_field(wp_unslash($_SERVER['REQUEST_METHOD']));
-
         $request_uri = sanitize_text_field(wp_unslash($_SERVER['REQUEST_URI']));
-        
-        /**
-         * Forzamos a WordPress a determinar el usuario actual si aún no lo ha hecho.
-         * Esto permite que get_current_user_id() devuelva el valor correcto en este filtro.
-         */
         
         wp_validate_auth_cookie();
         
-        // Admin check
-        
-        // Heart::log('ADMIN ------------------------------------------');
-        // Heart::log($request_uri);
-        // Heart::log($this->is_admin_user());
-
         if ($this->is_admin_user()) {
 
             return null;
         }
         
-        // Public check
-        
-        // Future use of Cache Redis/MemCache
-        // $public_cache_key = $this->whitelistcachekeys['public'];
-        // $pattern = wp_cache_get($public_cache_key);
-        
-        $pattern = $this->whitelistcompiled['public'];
-        
-        // Heart::log('PUBLIC ------------------------------------------');
-        // Heart::log($request_uri);
-        // Heart::log($pattern);
-        // Heart::log(preg_match($pattern, $request_uri));
+        $pattern = $this->api->whiteliwhite_list_compiled['public'];
         
         if (preg_match($pattern, $request_uri)) {
             
             return null;
         }
         
-        // Logged check
-        
-        // Future use of Cache Redis/MemCache
-        // $logged_cache_key = $this->whitelistcachekeys['logged'];
-        // $pattern = wp_cache_get($logged_cache_key);
-        
-        $pattern = $this->whitelistcompiled['logged'];
-        
-        // Heart::log('LOGGED ------------------------------------------');
-        // Heart::log($request_uri);
-        // Heart::log($pattern);
-        // Heart::log(is_user_logged_in());
-        // Heart::log(preg_match($pattern, $request_uri));
+        $pattern = $this->api->white_list_compiled['logged'];
         
         if (
             is_user_logged_in()
@@ -328,10 +67,6 @@ class Main
             
             return null;
         }
-        
-        // Heart::log('ERROR ------------------------------------------');
-        // Heart::log($request_uri);
-        // Heart::log($this->is_admin_user());
         
         $message = __('REST API restricted access. Needs authentication.', 'poeticsoft-heart');
         
@@ -356,14 +91,145 @@ class Main
             wp_get_current_user()->roles
         );
     }
+}
+
+
+============================================================
+
+class\Heart\API\Endpoints.php
+----------------------------------------------
+Archivo: class\Heart\API\Endpoints.php
+----------------------------------------------
+
+<?php
+
+namespace Poeticsoft\Heart\API;
+
+use Poeticsoft\Heart\API\Main as API;
+
+class Endpoints
+{
+    protected $api;
+    protected $heart;
     
-    /**
-     * Envía una respuesta unificada siguiendo el estándar de Poeticsoft Forge.
-     * @param mixed $data Datos a enviar o mensaje de error.
-     * @param int $status Código de estado HTTP.
-     * @param bool $success Indica si la operación fue exitosa.
-     * @return \WP_REST_Response
-     */
+    public function __construct(API $api)
+    {
+        $this->api = $api;
+        $this->heart = $api->heart;
+        
+        add_action(
+            'rest_api_init',
+            [
+                $this,
+                'register_all_forge_endpoints'
+            ]
+        );
+    }
+    
+    public function register_all_forge_endpoints()
+    {
+                        
+        $forges = $this->heart->forge->get_forges();
+        
+        foreach ($forges as $forge) {
+                
+            if ($forge->get_has_api()) {
+                
+                $forge_api = $forge->get_api();
+                
+                $namespace = $this->heart->get_id() .
+                '/' .
+                $forge->get_id();
+                                        
+                $endpoints = $forge_api->get_endpoints();
+                
+                $forge->data['endpoints'] = [];
+                    
+                foreach ($endpoints as $version => $sections) {
+        
+                    foreach ($sections as $section => $routes) {
+                            
+                        foreach ($routes as $route) {
+                            
+                            $path = $version .
+                            '/' .
+                            $section .
+                            '/' .
+                            $route['path'];
+                            
+                            $endpoint = $namespace . '/' . $path;
+                            $forge->data['endpoints'][] = $endpoint;
+                
+                            register_rest_route(
+                                $namespace,
+                                $path,
+                                [
+                                    'methods'  => $route['methods'],
+                                    'callback' => $route['callback'],
+                                    'permission_callback' => '__return_true'
+                                ]
+                            );
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+============================================================
+
+class\Heart\API\Main.php
+----------------------------------------------
+Archivo: class\Heart\API\Main.php
+----------------------------------------------
+
+<?php
+
+namespace Poeticsoft\Heart\API;
+
+use Poeticsoft\Heart\Main as Heart;
+use Poeticsoft\Heart\API\WhiteList;
+use Poeticsoft\Heart\API\Endpoints;
+use Poeticsoft\Heart\API\Auth;
+
+class Main
+{
+    public $heart;
+    public $white_list;
+    public $endpoints;
+    public $auth;
+
+    public function __construct(Heart $heart)
+    {
+                        
+        $this->heart = $heart;
+        $this->white_list = new WhiteList($this);
+        $this->endpoints = new Endpoints($this);
+        $this->auth = new Auth($this);
+    }
+
+    public function init()
+    {
+        
+        add_action(
+            'rest_api_init',
+            [
+                $this,
+                'register_all_forge_endpoints'
+            ]
+        );
+        
+        add_filter(
+            'rest_authentication_errors',
+            [
+                $this,
+                'check_rest_authentication'
+            ]
+        );
+    }
+    
     public function send_response(
         $data,
         int $status = 200,
@@ -371,8 +237,8 @@ class Main
     ): \WP_REST_Response {
         
         $response = [
-            'code' => '',       // Compliant with WP_Error response
-            'message' => '',    //
+            'code' => '',
+            'message' => '',
             'data' => $this->format_response_data(
                 $data,
                 $status,
@@ -402,7 +268,7 @@ class Main
             'meta' => [
                 'timestampms' => time() * 1000,
                 'fecha' => $fecha,
-                'version' => $this->engine->get_version()
+                'version' => $this->heart->get_version()
             ]
         ];
     }
@@ -411,568 +277,190 @@ class Main
 
 ============================================================
 
-class\Heart\Admin\Main.php
+class\Heart\API\WhiteList.php
 ----------------------------------------------
-Archivo: class\Heart\Admin\Main.php
+Archivo: class\Heart\API\WhiteList.php
+----------------------------------------------
+
+<?php
+
+namespace Poeticsoft\Heart\API;
+
+use Poeticsoft\Heart\API\Main as API;
+
+class WhiteList
+{
+    protected $api;
+    protected $heart;
+    protected $white_list;
+    protected $white_list_compiled;
+
+    public function __construct(API $api)
+    {
+        $this->api = $api;
+        $this->heart = $api->heart;
+        $this->white_list = [
+            'public' => [],
+            'logged' => []
+        ];
+        $this->white_list_compiled = [
+            'public' => '',
+            'logged' => ''
+        ];
+    }
+    
+    public function compile_whitelists()
+    {
+
+        $forges = $this->heart->forge->get_forges();
+
+        foreach ($forges as $forge) {
+            
+            if ($forge->get_has_api()) {
+                
+                $forge_api = $forge->get_api();
+                $whitelists = $forge_api->get_whitelist();
+                
+                $namespace = $this->heart->get_id() . '/' . $forge->get_id();
+
+                foreach ($whitelists as $version => $sections) {
+                    
+                    foreach ($sections as $section => $types) {
+                        
+                        foreach ($types as $type => $paths) {
+                            
+                            foreach ($paths as $path) {
+                                
+                                $item = '/wp-json/' .
+                                $namespace .
+                                '/' .
+                                $version .
+                                '/' .
+                                $section .
+                                '/' .
+                                $path;
+                                
+                                $this->white_list[$type][] = $item;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        foreach ($this->white_list as $type => $endpoints) {
+            
+            if (empty($endpoints)) {
+                
+                $this->white_list_compiled[$type] = '/^$/';
+                
+                continue;
+            }
+
+            $type_regex_parts = array_map(
+                function ($endpoint) {
+                
+                    $quoted = str_replace('/', '\/', $endpoint);
+                    
+                    return str_replace('*', '.*', $quoted);
+                },
+                $endpoints
+            );
+
+            $this->white_list_compiled[$type] = '/^(' . implode('|', $type_regex_parts) . ')$/';
+        }
+    }
+}
+
+
+============================================================
+
+class\Heart\Admin\Dashboard.php
+----------------------------------------------
+Archivo: class\Heart\Admin\Dashboard.php
 ----------------------------------------------
 
 <?php
 
 namespace Poeticsoft\Heart\Admin;
 
-use Poeticsoft\Heart\Engine;
-
-/**
- * Clase Admin - Gestor de la interfaz administrativa.
- *
- * Se encarga de registrar los menús, notices y hooks específicos
- * del área de administración de WordPress.
- *
- * @package Poeticsoft\Heart
- * @since 0.0.0
- */
-class Main
-{
-    /**
-     * Instancia del motor principal.
-     *
-     * @var Engine
-     */
-    private $engine;
-
-    /**
-     * Constructor de la clase Admin.
-     *
-     * @param Engine $engine Inyección de la instancia del motor.
-     */
-    public function __construct(Engine $engine)
-    {
-        $this->engine = $engine;
-
-        // Registramos los enlaces en la tabla de plugins (como "Diagnóstico")
-        add_filter(
-            'plugin_action_links_' . $this->engine->get_basename(),
-            [$this->engine->inspector, 'add_action_link']
-        );
-
-        // Hook para mostrar el panel de diagnóstico si se solicita
-        add_action(
-            'admin_notices',
-            [$this->engine->inspector, 'render_diagnostic_panel']
-        );
-
-        // Aquí podrías añadir más hooks administrativos
-        // add_action('admin_menu', [$this, 'add_admin_menu']);
-    }
-
-    /**
-     * Ejemplo de método para añadir un menú (opcional para el futuro).
-     * * @return void
-     */
-    public function add_admin_menu()
-    {
-        // Lógica para add_menu_page() si fuera necesario
-    }
-}
-
-
-============================================================
-
-class\Heart\Engine.php
-----------------------------------------------
-Archivo: class\Heart\Engine.php
-----------------------------------------------
-
-<?php
-
-namespace Poeticsoft\Heart;
-
-use Poeticsoft\Heart;
-use Poeticsoft\Heart\API\Main as API;
 use Poeticsoft\Heart\Admin\Main as Admin;
 
-/**
- * Motor central del ecosistema Poeticsoft Heart & Forges.
- *
- * Gestiona el ciclo de vida de los módulos (Forges), el registro centralizado
- * de logs y la inicialización de componentes administrativos del núcleo.
- *
- * @package Poeticsoft\Heart
- * @version 1.0.0
- * @since   2026-02-18
- */
-class Engine
+class Dashboard
 {
-    /** * @var self|null Almacena la instancia única del motor siguiendo el patrón Singleton.
-     */
-    private static ?self $instance = null;
-
-    /** * @var string Id
-     */
-    private string $id;
-
-    /** * @var ForgeInterface[] Colección de módulos registrados que implementan la interfaz Forge.
-     */
-    private array $forges = [];
-
-    /** * @var Admin Controlador del área de administración de WordPress.
-     */
-    protected Admin $admin;
-
-    /** * @var API Controlador y funcionalidad compartida de las apis de forges
-     */
-    public API $api;
-
-    /** * @var Frontend Controlador de procesos de cargas de frontend.
-     */
-    protected UI $ui;
-
-    /** * @var Logging Controlador de Logs y Mensajes
-     */
-    public Logging $logging;
-
-    /** * @var Inspector Panel de control general en forma de Notice
-     */
-    public Inspector $inspector;
-
-    /** * @var string Versión actual del núcleo Heart. Inmutable tras la creación.
-     */
-    private readonly string $version;
-
-    /** * @var string Ruta absoluta al archivo de entrada del plugin (main file).
-     */
-    private readonly string $pluginfile;
-
-    /** * @var string Directorio raíz del plugin con slash final (trailingslashit).
-     */
-    private readonly string $path;
-
-    /** * @var string URL pública del directorio del plugin.
-     */
-    private readonly string $url;
-
-    /** * @var string Identificador único de WordPress basado en el path del plugin.
-     */
-    private readonly string $basename;
-
-    /** * @var string Token de autenticación global.
-     */
-    private ?string $token = null;
-
-    /** * shortcode for logging
-     */
-    public $log;
-
-    /**
-     * Prevenir la clonación del objeto para mantener la integridad del Singleton.
-     */
-    private function __clone()
+    private $heart;
+    private $admin;
+    
+    public function __construct(Admin $admin)
     {
-    }
-
-    /**
-     * Prevenir la deserialización para evitar duplicidad de instancias en memoria.
-     * * @throws \Exception Siempre, para bloquear el uso de unserialize().
-     */
-    public function __wakeup()
-    {
-        throw new \Exception("No se puede deserializar un Singleton.");
-    }
-
-    /**
-     * Acceso global a la instancia del motor.
-     *
-     * @return self Instancia activa del Engine.
-     * @throws \RuntimeException Si se llama antes de haber ejecutado boot().
-     */
-    public static function get_instance(): self
-    {
-        if (null === self::$instance) {
-            
-            self::$instance = new self();
-        }
-        return self::$instance;
-    }
-
-    /**
-     * Constructor privado. Configura el entorno y las constantes de ruta.
-     * * @param string $pluginfile
-     */
-    public function __construct()
-    {
+        $this->admin = $admin;
+        $this->heart = $admin->heart;
         
-        $id = 'poeticsoft-heart';
-        $pluginfile = WP_PLUGIN_DIR . '/' . $id . '/' . $id . '.php';
-        
-        // Configuración inmutable del entorno
-        
-        $this->id = $id;
-        $this->version = '0.0.0';
-        $this->pluginfile = $pluginfile;
-        $this->path = plugin_dir_path($pluginfile);
-        $this->url = plugin_dir_url($pluginfile);
-        $this->basename = plugin_basename($pluginfile);
-        $this->inspector = new Inspector($this);
-        $this->admin = new Admin($this);
-        $this->api = new API($this);
-        $this->ui = new UI($this);
-        $this->logging = new Logging($this);
-        
-        // Registra Endpoints de api
-        $this->api->init();
-        
-        // Registra hooks y filtros de UI antes de inicializar los forges
-        $this->ui->init();
-        
-        // Hook registro de Forges
         add_action(
-            'plugins_loaded', // (Hack favicon.ico for single trig)
-            [$this, 'plugins_loaded']
+            'wp_dashboard_setup',
+            [
+                $this,
+                'add_dashboards_widgets'
+            ]
         );
     }
-
-    /**
-     * Dispara la inicialización de todos los módulos registrados.
-     * Inicializa Subclases que necesitan
-     * * @return void
-     */
-    public function plugins_loaded(): void
+    
+    public function add_dashboards_widgets()
     {
         
-        // Hook para que otros plugins registren sus Forges
-        do_action('poeticsoft_heart_register', $this);
-
-        foreach ($this->forges as $id => $forge) {
-            
-            try {
-                
-                $forge->init($this);
-                
-            } catch (\Exception $e) {
-                
-                $this->logging->log("Error al inicializar Forge {$id}: {$e->getMessage()}", 'ERROR');
-            }
-        }
-
-        do_action('poeticsoft_heart_booted', $this);
-        
-        /**
-         * Procesos en forges que necsitan que el forge esté inicializado
-         */
-        $this->ui->register_forges_parts();
-        
-        /**
-         * DEBUG
-         */
-        // Heart::log('Token ***********************************');
-        // Heart::log($this->get_token());
-    }
-
-    /**
-     * Registra un nuevo módulo (Forge) en el registro central.
-     * Es llamada desde el archivo principal del plugin
-     * cuando ejecuta la accion poeticsoft_heart_register
-     * Con la instancia de la clase principal como argumento
-     *
-     * @param string $id Identificador único (slug) para el módulo.
-     * @param ForgeInterface $instancia Objeto que cumple el contrato ForgeInterface.
-     * @return bool True si el registro fue exitoso.
-     * @throws \InvalidArgumentException Si el ID proporcionado es inválido.
-     */
-    public function registrar_forge(string $id, ForgeInterface $instancia): bool
-    {
-        if (empty($id)) {
-            throw new \InvalidArgumentException('El ID del módulo no puede estar vacío');
-        }
-
-        $this->forges[$id] = $instancia;
-        
-        return true;
+        wp_add_dashboard_widget(
+            'mi_widget_id',
+            'Heart',
+            [
+                $this,
+                'mi_widget_render'
+            ]
+        );
     }
     
-    /**
-     * Getters
-     */
-
-    /** @return string Id Core. */
-    public function get_id(): string
+    public function mi_widget_render()
     {
-        return $this->id;
-    }
-
-    /** @return string Versión del core. */
-    public function get_version(): string
-    {
-        return $this->version;
-    }
-
-    /** @return ForgeInterface[] Listado de módulos. */
-    public function get_forges(): array
-    {
-        return $this->forges;
-    }
-
-    /** @return Forge Busca Forge por Id */
-    public function get_forgeby_id($id): array
-    {
-        return $this->forges[$id];
-    }
-
-    /** @return string Basename del plugin. */
-    public function get_basename(): string
-    {
-        return $this->basename;
-    }
-    
-    /**
-     * Obtiene el token de seguridad centralizado cuando se solicita por primera vez.
-     * * @return string
-     */
-    public function get_token(): string
-    {
-        if (null === $this->token) {
-            
-            $this->token = wp_create_nonce('wp_rest');
-        }
-
-        return $this->token;
-    }
-
-    /** Acciones de activación de WordPress. */
-    public static function activate(): void
-    {
-        wp_cache_flush();
-    }
-
-    /** Acciones de desactivación de WordPress. */
-    public static function deactivate(): void
-    {
-        wp_cache_flush();
-    }
-
-    /**
-     * Limpieza profunda del sistema durante la desinstalación.
-     * Elimina logs y backups generados por el ecosistema.
-     */
-    public static function uninstall(): void
-    {
-        try {
-            // Acceso seguro a la instancia para obtener rutas
-            $instance = self::get_instance();
-            $logfile = $instance->logging->get_logfile();
-
-            if (file_exists($logfile)) {
-                
-                @unlink($logfile);
-                
-                $backups = glob($logfile . '.*.bak');
-                
-                if (is_array($backups)) {
-                    
-                    foreach ($backups as $file) {
-                        
-                        @unlink($file);
-                    }
-                }
-            }
-            
-        } catch (\Exception $e) {
-            
-            // Silenciar si el motor no estaba cargado durante la desinstalación
-        }
-
-        wp_cache_flush();
-        do_action('poeticsoft_heart_uninstall');
+        
+        echo '<div class="Content">contenido_del_widget</div>';
     }
 }
 
 
 ============================================================
 
-class\Heart\ForgeInterface.php
+class\Heart\Admin\Inspector.php
 ----------------------------------------------
-Archivo: class\Heart\ForgeInterface.php
-----------------------------------------------
-
-<?php
-
-namespace Poeticsoft\Heart;
-
-/**
- * Contrato para los módulos (Forges) del ecosistema Poeticsoft.
- *
- * Cualquier componente que desee integrarse como un módulo dentro de Heart
- * debe implementar esta interfaz para asegurar la compatibilidad con el motor.
- *
- * @package Poeticsoft\Heart
- * @since 0.0.0
- */
-interface ForgeInterface
-{
-    /**
-     * Inicializa el módulo.
-     *
-     * @param Engine $engine Instancia del motor central para interactuar con el núcleo.
-     * @return void
-     */
-    public function init(Engine $engine);
-    
-    /**
-     * ------------------------------------------------------------------------
-     * Funcionalidades
-     *
-     */
-
-    /**
-     * Obtiene el id del bloque para construccion de identificadores
-     *
-     * @return string Ejemplo: "forge_base"
-     */
-    public function get_id();
-
-    /**
-     * Obtiene el nombre legible del módulo.
-     *
-     * @return string Ejemplo: "Forge Base"
-     */
-    public function get_name();
-
-    /**
-     * Obtiene la versión actual del módulo.
-     *
-     * @return string Formato SemVer (ej: 1.0.2).
-     */
-    public function get_version();
-
-    /**
-     * Obtiene una descripción breve de la funcionalidad del módulo.
-     *
-     * @return string
-     */
-    public function get_description();
-
-    /**
-     * Obtiene el path físico del plugin
-     *
-     * @return string
-     */
-    public function get_plugin_path();
-
-    /**
-     * Obtiene la uri del plugin
-     *
-     * @return string
-     */
-    public function get_plugin_uri();
-    
-    /**
-     * ------------------------------------------------------------------------
-     * Funcionalidades
-     *
-     */
-
-    /**
-     * Flag indicador de assets (scripts & styles) de admin para cargar
-     *
-     * @return boolean
-     */
-    public function get_has_ui_admin();
-    
-    /**
-     * Flag indicador de assets (scripts & styles) de frontend para cargar
-     *
-     * @return boolean
-     */
-    public function get_has_ui_frontend();
-
-    /**
-     * Flag indicador de que hay blocks para registrar
-     *
-     * @return boolean
-     */
-    public function get_has_ui_blocks();
-    
-    /**
-     * Flag indicador de que se han creado overrides de core blocks
-     *
-     * @return boolean
-     */
-    public function get_has_ui_core_blocks();
-    
-    /**
-     * Flag indicador de que se han creado configuradores de core blocks
-     *
-     * @return boolean
-     */
-    public function get_has_ui_core_configs();
-
-    /**
-     * Flag indicador de que hay metaboxes de edicion
-     *
-     * @return boolean
-     */
-    public function get_has_ui_meta_boxes();
-
-    /**
-     * Flag indicador de que declara endpoints api
-     *
-     * @return boolean
-     */
-    public function get_has_api();
-}
-
-
-============================================================
-
-class\Heart\Inspector.php
-----------------------------------------------
-Archivo: class\Heart\Inspector.php
+Archivo: class\Heart\Admin\Inspector.php
 ----------------------------------------------
 
 <?php
 
-namespace Poeticsoft\Heart;
+namespace Poeticsoft\Heart\Admin;
 
-/**
- * Clase Inspector - Diagnóstico y utilidades del sistema.
- */
+use Poeticsoft\Heart\Admin\Main as Admin;
+
 class Inspector
 {
-    /**
-     * Instancia del motor principal.
-     *
-     * @var Engine
-     */
-    private $engine;
+    private $heart;
+    private $admin;
 
-    /**
-     * Constructor de la clase Inspector.
-     *
-     * @param Engine $heart Inyección de la instancia del motor.
-     */
-    public function __construct(Engine $engine)
+    public function __construct(Admin $admin)
     {
-        // Heart
-        $this->engine = $engine;
+        
+        $this->admin = $admin;
+        $this->heart = $admin->heart;
     }
 
-    /**
-     * Realiza tests de diagnóstico básicos del entorno.
-     *
-     * @return array Resumen de estados con iconos.
-     */
     private function run_diagnostic(): array
     {
         global $wp_version;
         $results = [];
 
-        // Comprobaciones de integridad del núcleo
-        $results['Engine']    = class_exists('\Poeticsoft\Heart\Engine') ? '✅' : '❌';
-        $results['Singleton'] = ($this->engine === Engine::get_instance()) ? '✅' : '❌';
-        $results['Forges']    = '📦 ' . count($this->engine->get_forges());
+        $results['Heart']    = class_exists('\Poeticsoft\Heart\Heart') ? '✅' : '❌';
+        $results['Singleton'] = ($this->heart === Heart::get_instance()) ? '✅' : '❌';
+        $results['Forges']    = '📦 ' . count($this->heart->get_forges());
 
-        // Verificación del sistema de Logging
-        $logfile = $this->engine->logging->get_logfile();
+        $logfile = $this->heart->get_logfile();
 
         if (empty($logfile)) {
             
@@ -1010,8 +498,8 @@ class Inspector
             return;
         }
 
-        // VALIDACIÓN CENTRALIZADA: Usamos el token del Engine
-        $token = $this->engine->get_token();
+        // VALIDACIÓN CENTRALIZADA: Usamos el token del Heart
+        $token = $this->heart->get_token();
 
         if (
             !isset($_GET['_wpnonce'])
@@ -1023,7 +511,7 @@ class Inspector
         }
 
         $report = $this->run_diagnostic();
-        $forges = $this->engine->get_forges();
+        $forges = $this->heart->forge->get_forges();
         $forges = array_map(
             function ($forge) {
                 
@@ -1192,10 +680,10 @@ class Inspector
     public function add_action_link(array $links): array
     {
         
-        $engine  = Engine::get_instance();
+        $heart  = Heart::get_instance();
         
         // Usamos el Master Nonce para construir la URL manualmente
-        $token = $engine->get_token();
+        $token = $heart->get_token();
         
         $url   = admin_url('?test_forge=1&_wpnonce=' . $token);
 
@@ -1213,90 +701,399 @@ class Inspector
 
 ============================================================
 
-class\Heart\Logging.php
+class\Heart\Admin\Main.php
 ----------------------------------------------
-Archivo: class\Heart\Logging.php
+Archivo: class\Heart\Admin\Main.php
+----------------------------------------------
+
+<?php
+
+namespace Poeticsoft\Heart\Admin;
+
+use Poeticsoft\Heart\Main as Heart;
+use Poeticsoft\Heart\Admin\Dashboard;
+    
+class Main
+{
+    // -------------------------------------------------------------------------------
+    
+    public $heart;
+    public $dashboard;
+    private ?string $token = null;
+
+    // -------------------------------------------------------------------------------
+    
+    public function __construct(Heart $heart)
+    {
+        $this->heart = $heart;
+
+        $this->dashboard = new Dashboard($this);
+    }
+    
+    // -------------------------------------------------------------------------------
+    
+    public function get_token(): string
+    {
+        if (null === $this->token) {
+            
+            $this->token = wp_create_nonce('wp_rest');
+        }
+
+        return $this->token;
+    }
+}
+
+
+============================================================
+
+class\Heart\Admin\Updater.php
+----------------------------------------------
+Archivo: class\Heart\Admin\Updater.php
+----------------------------------------------
+
+<?php
+
+namespace Poeticsoft\Heart\Admin;
+
+use YahnisElsts\PluginUpdateChecker\v5\PucFactory;
+
+class Updater
+{
+    // public static function init(string $file, string $slug, string $server_url = '')
+    // {
+    //     if (!class_exists('YahnisElsts\PluginUpdateChecker\v5\PucFactory')) {
+    //         \Poeticsoft\log(
+    //             "Update Checker no disponible para: {$slug}",
+    //             'WARNING',
+    //             'UPDATES'
+    //         );
+    //         return;
+    //     }
+
+    //     if (empty($server_url)) {
+    //         $server_url = "https://poeticsoft.com/plugins/{$slug}/info.json";
+    //     }
+
+    //     try {
+            
+    //         $updateChecker = PucFactory::buildUpdateChecker(
+    //             $server_url,
+    //             $file,
+    //             $slug
+    //         );
+            
+    //         \Poeticsoft\log("Sistema de actualizaciones activo: {$slug}", 'INFO', 'UPDATES');
+            
+    //     } catch (\Exception $e) {
+    //         \Poeticsoft\log(
+    //             "Fallo al iniciar updates para {$slug}: " . $e->getMessage(),
+    //             'ERROR',
+    //             'UPDATES'
+    //         );
+    //     }
+    // }
+}
+
+
+============================================================
+
+class\Heart\Forge\ForgeInterface.php
+----------------------------------------------
+Archivo: class\Heart\Forge\ForgeInterface.php
+----------------------------------------------
+
+<?php
+
+namespace Poeticsoft\Heart\Forge;
+
+use Poeticsoft\Heart\Main as Heart;
+
+interface ForgeInterface
+{
+    // -------------------------------------------------------------------------------
+    
+    public function get_id();
+    
+    public function get_name();
+
+    public function get_version();
+
+    public function get_description();
+    
+    public function get_plugin_path();
+    
+    public function get_plugin_uri();
+    
+    // -------------------------------------------------------------------------------
+    
+    public function get_has_ui_admin();
+    
+    public function get_has_ui_frontend();
+    
+    public function get_has_ui_core_blocks();
+    
+    public function get_has_ui_core_configs();
+    
+    public function get_has_ui_meta_boxes();
+    
+    public function get_has_ui_block_control();
+    
+    public function get_has_api();
+    
+    // -------------------------------------------------------------------------------
+    
+    public function init(Heart $heart);
+}
+
+
+============================================================
+
+class\Heart\Forge\Main.php
+----------------------------------------------
+Archivo: class\Heart\Forge\Main.php
+----------------------------------------------
+
+<?php
+
+namespace Poeticsoft\Heart\Forge;
+
+use Poeticsoft\Heart\Main as Heart;
+
+class Main
+{
+    // -------------------------------------------------------------------------------
+    
+    public $heart;
+    private array $forges = [];
+    
+    // -------------------------------------------------------------------------------
+    
+    public function __construct(Heart $heart)
+    {
+                        
+        $this->heart = $heart;
+    
+        add_action(
+            'plugins_loaded', // (Hack favicon.ico for single trig)
+            [
+                $this,
+                'plugins_loaded'
+            ]
+        );
+    }
+    
+    public function plugins_loaded(): void
+    {
+        
+        do_action('poeticsoft_heart_register', $this);
+
+        foreach ($this->forges as $id => $forge) {
+            
+            try {
+                
+                $forge->init($this->heart);
+                
+            } catch (\Exception $e) {
+                
+                $this->heart->log("Error al inicializar Forge {$id}: {$e->getMessage()}", 'ERROR');
+            }
+        }
+
+        do_action('poeticsoft_heart_booted', $this);
+        
+        $this->heart->ui->core_blocks->register();
+    }
+    
+    public function registrar_forge(string $id, ForgeInterface $instancia): bool
+    {
+        
+        if (empty($id)) {
+            throw new \InvalidArgumentException('El ID del módulo no puede estar vacío');
+        }
+
+        $this->forges[$id] = $instancia;
+        
+        return true;
+    }
+
+    public function get_forges(): array
+    {
+        return $this->forges;
+    }
+
+    public function get_forgeby_id($id): array
+    {
+        return $this->forges[$id];
+    }
+}
+
+
+============================================================
+
+class\Heart\Main.php
+----------------------------------------------
+Archivo: class\Heart\Main.php
 ----------------------------------------------
 
 <?php
 
 namespace Poeticsoft\Heart;
 
-/**
- * Clase Logging - Registro de eventos & Mensajes
- *
- * @package Poeticsoft\Logging
- * @since 0.0.0
- */
-class Logging
+use Poeticsoft\H;
+use Poeticsoft\Heart\Admin\Main as Admin;
+use Poeticsoft\Heart\API\Main as API;
+use Poeticsoft\Heart\Forge\Main as Forge;
+use Poeticsoft\Heart\UI\Main as UI;
+
+class Main
 {
-    /**
-     * Instancia del motor principal.
-     *
-     * @var Engine
-     */
-    private $engine;
-
-    /** * @var string Ruta completa al archivo de depuración personalizado del ecosistema.
-     */
-    private readonly string $logfile;
-
-    /**
-     * Constructor de la clase Logging.
-     *
-     * @param Engine $heart Inyección de la instancia del motor.
-     */
-    public function __construct(Engine $engine)
+    // -------------------------------------------------------------------------------
+    
+    public Admin $admin;
+    public API $api;
+    public Forge $forge;
+    public UI $ui;
+    
+    // -------------------------------------------------------------------------------
+    
+    private static ?self $instance = null;
+    private readonly string $id;
+    private readonly string $version;
+    private readonly string $plugin_file;
+    private readonly string $path;
+    private readonly string $url;
+    private readonly string $basename;
+    private readonly string $log_file;
+    
+    // -------------------------------------------------------------------------------
+    
+    public $log;
+    
+    // -------------------------------------------------------------------------------
+    
+    private function __clone()
     {
-        // Heart
-        $this->engine = $engine;
-        
-        // Donde escribir el log
-        $this->logfile = WP_CONTENT_DIR . '/poeticsoft-heart-debug.log';
-        
-        // Asegurar escritura de log .
-        $this->ensure_log_availability();
     }
 
-    /**
-     * Verifica y prepara el sistema de archivos para el log.
-     * Crea el archivo y ajusta permisos si es necesario.
-     * * @return void
-     */
-    private function ensure_log_availability(): void
+    public function __wakeup()
     {
-        $log_dir = dirname($this->logfile);
-        
-        if (is_writable($log_dir)) {
+        throw new \Exception("No se puede deserializar un Singleton.");
+    }
+
+    public static function get_instance(): self
+    {
+        if (null === self::$instance) {
             
-            if (!file_exists($this->logfile)) {
-                
-                file_put_contents($this->logfile, '');
-                
-            } else {
-            
-                /*  DEBUG empty file
-                file_put_contents($this->logfile, ''); */
-            }
-            
-        } else {
-            
-            if (!is_writable($this->logfile)) {
-                
-                chmod($this->logfile, 0664);
-            }
+            self::$instance = new self();
         }
+        return self::$instance;
     }
 
-    /**
-     * Escribe eventos en el archivo de log dedicado del sistema.
-     * Solo actúa si WP_DEBUG está activo para optimizar rendimiento.
-     *
-     * @param mixed  $mensaje Datos a registrar (strings o arrays/objetos).
-     * @param string $nivel   Categoría del log (INFO, ERROR, DEBUG).
-     * @param string $forge   Origen o nombre del módulo que genera el log.
-     * @return bool True si se escribió correctamente.
-     */
+    public function __construct()
+    {
+        
+        $id = 'poeticsoft-heart';
+        $plugin_file = WP_PLUGIN_DIR . '/' . $id . '/' . $id . '.php';
+        $log_file = WP_CONTENT_DIR . '/' . $id . '.log';
+        
+        $this->id = $id;
+        $this->version = '0.0.0';
+        $this->plugin_file = $plugin_file;
+        $this->basename = plugin_basename($plugin_file);
+        $this->path = plugin_dir_path($plugin_file);
+        $this->url = plugin_dir_url($plugin_file);
+        $this->log_file = $log_file;
+        
+        $this->admin = new Admin($this);
+        $this->api = new API($this);
+        $this->forge = new Forge($this);
+        $this->ui = new UI($this);
+    }
+    
+    // -------------------------------------------------------------------------------
+    
+    public function get_id(): string
+    {
+        return $this->id;
+    }
+
+    public function get_version(): string
+    {
+        return $this->version;
+    }
+
+    public function get_plugin_file(): string
+    {
+        return $this->plugin_file;
+    }
+
+    public function get_basename(): string
+    {
+        return $this->basename;
+    }
+
+    public function get_path(): string
+    {
+        return $this->path;
+    }
+
+    public function get_url(): string
+    {
+        return $this->url;
+    }
+
+    public function get_log_file(): string
+    {
+        return $this->log_file;
+    }
+
+    // -------------------------------------------------------------------------------
+    
+    public static function activate(): void
+    {
+        wp_cache_flush();
+    }
+
+    public static function deactivate(): void
+    {
+        wp_cache_flush();
+    }
+
+    // -------------------------------------------------------------------------------
+    
+    public static function uninstall(): void
+    {
+        try {
+            
+            $instance = self::get_instance();
+            $log_file = $instance->get_log_file();
+
+            if (file_exists($log_file)) {
+                
+                @unlink($log_file);
+                
+                $backups = glob($log_file . '.*.bak');
+                
+                if (is_array($backups)) {
+                    
+                    foreach ($backups as $file) {
+                        
+                        @unlink($file);
+                    }
+                }
+            }
+            
+        } catch (\Exception $e) {
+            
+            // Silenciar si el motor no estaba cargado durante la desinstalación
+        }
+
+        wp_cache_flush();
+        do_action('poeticsoft_heart_uninstall');
+    }
+    
+    // -------------------------------------------------------------------------------
+    
     public function log(
         $mensaje,
         string $nivel = 'INFO',
@@ -1315,78 +1112,57 @@ class Logging
         $entrada = "[{$fecha}] [{$nivel}] [{$forge}]: {$text}" . PHP_EOL;
 
         if (
-            is_writable(dirname($this->logfile))
+            is_writable(dirname($this->log_file))
             ||
             (
-                file_exists($this->logfile)
+                file_exists($this->log_file)
                 &&
-                is_writable($this->logfile)
+                is_writable($this->log_file)
             )
         ) {
             
-            return (bool) error_log($entrada, 3, $this->logfile);
+            return (bool) error_log(
+                $entrada,
+                3,
+                $this->log_file
+            );
         }
 
         error_log("HEART_LOG_FALLBACK: " . $entrada);
+        
         return false;
-    }
-
-    /** @return string Ruta del archivo log. */
-    public function get_logfile(): string
-    {
-        return $this->logfile;
     }
 }
 
 
 ============================================================
 
-class\Heart\UI.php
+class\Heart\UI\Blocks.php
 ----------------------------------------------
-Archivo: class\Heart\UI.php
+Archivo: class\Heart\UI\Blocks.php
 ----------------------------------------------
 
 <?php
 
-namespace Poeticsoft\Heart;
+namespace Poeticsoft\Heart\UI;
 
-use Poeticsoft\Heart as Heart;
+use Poeticsoft\Heart\UI\Main as UI;
 
-/**
- * Clase UI - procesos relacionados son inteface de usuario
- *
- * Carga recursos para Administracion y Visualización Frontend
- * de tods los Forges!
- *
- * @package Poeticsoft\UI
- * @since 0.0.0
- */
-class UI
+class Blocks
 {
-    /**
-     * Instancia del motor principal.
-     *
-     * @var Engine
-     */
-    private $engine;
+    private $heart;
+    private $ui;
 
-    /**
-     * Constructor de la clase UI.
-     *
-     * @param Engine $heart Inyección de la instancia del motor.
-     */
-    public function __construct(Engine $engine)
+    public function __construct(UI $ui)
     {
-        // Heart
-        $this->engine = $engine;
+        $this->ui = $ui;
+        $this->heart = $ui->heart;
+        
+        $this->register_common();
+        $this->register_blocks();
     }
     
-    /**
-     * Registra la categoria y elementos comunes para todos los bloques
-     *
-     * @since 0.0.0
-     */
-    private function forges_register_blocks_common()
+    private function register_common()
     {
 
         add_action(
@@ -1397,13 +1173,8 @@ class UI
             }
         );
     }
-    
-    /**
-     * Crea categoria de bloques para cada forge y registra los bloques en ella
-     *
-     * @since 0.0.0
-     */
-    private function forges_register_blocks()
+      
+    private function register_blocks()
     {
 
         add_action(
@@ -1417,7 +1188,7 @@ class UI
                         $post
                     ) {
                 
-                        $forges = $this->engine->get_forges();
+                        $forges = $this->heart->forge->get_forges();
                         foreach ($forges as $forge_id => $forge) {
                         
                             if ($forge->get_has_ui_blocks()) {
@@ -1446,7 +1217,7 @@ class UI
                     2
                 );
                 
-                $forges = $this->engine->get_forges();
+                $forges = $this->heart->forge->get_forges();
                 foreach ($forges as $forge_id => $forge) {
                     
                     if ($forge->get_has_ui_blocks()) {
@@ -1458,77 +1229,196 @@ class UI
                             ['..', '.']
                         );
                         
-                        $this->engine->get_forges();
+                        $this->heart->forge->get_forges();
                         
                         $forge->data['blocks'] = [];
                        
                         foreach ($block_names as $key => $block_name) {
 
-                            $block_json_dir = $blocks_path . '/' . $block_name;
+                        $block_json_dir = $blocks_path . '/' . $block_name;
                             
-                            $registered = register_block_type($block_json_dir);
+                        $registered = register_block_type($block_json_dir);
                             
                             if ($registered) {
                                 
                                 $forge->data['blocks'][] = $block_name;
                             }
                             
-                            /**
-                             * DEBUG
-                             */
-                            // $forge_name = $forge->get_name();
-                            // $this->engine->logging->log('---------------------------------------------');
-                            // $this->engine->logging->log(
-                            //     'registered block ' .
-                            //     $block_name .
-                            //     ' en ' .
-                            //     'Poeticsoft ' . $forge_name .
-                            //     ' -> ' .
-                            //     ( $registered ? 'SI' : 'NO')
-                            // );
+                        /**
+                         * DEBUG
+                         */
+                        // $forge_name = $forge->get_name();
+                        // $this->heart->logging->log('---------------------------------------------');
+                        // $this->heart->logging->log(
+                        //     'registered block ' .
+                        //     $block_name .
+                        //     ' en ' .
+                        //     'Poeticsoft ' . $forge_name .
+                        //     ' -> ' .
+                        //     ( $registered ? 'SI' : 'NO')
+                        // );
                         }
                     }
                 }
             }
         );
     }
+}
+
+
+============================================================
+
+class\Heart\UI\CoreBlocks.php
+----------------------------------------------
+Archivo: class\Heart\UI\CoreBlocks.php
+----------------------------------------------
+
+<?php
+
+namespace Poeticsoft\Heart\UI;
+
+use Poeticsoft\Heart\UI\Main as UI;
+
+class CoreBlocks
+{
+    private $heart;
+    private $ui;
+
+    public function __construct(UI $ui)
+    {
+        $this->ui = $ui;
+        $this->heart = $ui->heart;
+    }
     
-    /**
-     * Carga los assets (scripts & styles) del los ui de admin cada forge
-     *
-     * @since 0.0.0
-     */
-    
-    private function forges_enqueue_ui($forge, $section)
+    public function register()
     {
         
-        $heart_id = $this->engine->get_id();
+        add_action(
+            'init',
+            function () {
+                
+                $forges = $this->heart->forge->get_forges();
+                foreach ($forges as $forge_id => $forge) {
+                    
+                    if ($forge->get_has_ui_block_control()) {
+                        
+                        $forge_block_control = $forge->get_block_control();
+                        $forge_block_controls = $forge_block_control->get_block_controls();
+                        
+                        foreach ($forge_block_controls as $forge_block_control) {
+                            
+                            $block_type = \WP_Block_Type_Registry::get_instance()
+                            ->get_registered($forge_block_control->get_block_name());
+                            
+                            // Heart::log('------------------------------------------');
+                            // Heart::log($forge_block_control->block_name);
+                            // Heart::log('--------------------');
+                            // Heart::log($block_type ? 'SI' : 'NO');
+                                
+                            if ($block_type) {
+                                
+                                $block_type->attributes = array_merge(
+                                    $block_type->attributes,
+                                    $forge_block_control->get_block_attributes()
+                                );
+                            }
+                        }
+                    }
+                }
+            }
+        );
+        
+        $forges = $this->heart->forge->get_forges();
+        foreach ($forges as $forge_id => $forge) {
+            
+            if ($forge->get_has_ui_core_blocks()) {
+            
+                $forge_core_block = $forge->get_core_block();
+                $forge_core_blocks = $forge_core_block->get_core_blocks();
+            
+                foreach ($forge_core_blocks as $block_name => $forge_core_block) {
+                
+                    $block_render = 'render_block_' . $block_name;
+                
+                    add_filter(
+                        $block_render,
+                        [$forge_core_block, 'render'],
+                        10,
+                        2
+                    );
+                }
+            }
+        }
+    }
+}
+
+
+============================================================
+
+class\Heart\UI\Enqueue.php
+----------------------------------------------
+Archivo: class\Heart\UI\Enqueue.php
+----------------------------------------------
+
+<?php
+
+namespace Poeticsoft\Heart\UI;
+
+use Poeticsoft\Heart\UI\Main as UI;
+
+class Enqueue
+{
+    private $heart;
+    private $ui;
+
+    public function __construct(UI $ui)
+    {
+        $this->ui = $ui;
+        $this->heart = $ui->heart;
+        
+        $this->enqueue_ui();
+    }
+    
+    private function enqueue($forge, $section)
+    {
+        
+        $heart_id = $this->heart->get_id();
         $forge_id = $forge->get_id();
         $enqueue_id = $heart_id . '-' . $forge_id . '-' . $section;
         $forge_path = $forge->get_plugin_path();
         $forge_uri = $forge->get_plugin_uri();
         
         $deps = [
+        'blockcontrol' => [
+        'wp-blocks',
+        'wp-block-editor',
+        'wp-element',
+        'wp-components',
+        'wp-data',
+        'wp-compose',
+        'wp-hooks',
+        'lodash'
+        ],
         'admin' => [
-            'wp-blocks',
-            'wp-block-editor',
-            'wp-element',
-            'wp-components',
-            'wp-data',
-            'wp-hooks',
-            'lodash'
+        'wp-blocks',
+        'wp-block-editor',
+        'wp-element',
+        'wp-components',
+        'wp-data',
+        'wp-hooks',
+        'lodash'
         ],
         'frontend' => [
-            'wp-element',
-            'wp-components',
-            'wp-data'
+        'wp-element',
+        'wp-components',
+        'wp-data'
         ]
         ];
         
         /**
          * DEBUG
          */
-        // $this->engine->logging->log([
+        // $this->heart->logging->log([
         //     'enqueue_id' => $enqueue_id,
         //     'uri' => $forge_uri . '/ui/' . $section . '/main.js',
         //     'deps' => $deps[$section],
@@ -1552,99 +1442,137 @@ class UI
         );
     }
     
-    /**
-     * Carga los assets (scripts & styles) del los ui de admin cada forge
-     *
-     * @since 0.0.0
-     */
-    
-    private function forges_enqueue_ui_admin()
+    private function enqueue_ui()
     {
         
         add_action(
             'admin_enqueue_scripts',
             function () {
                 
-                $forges = $this->engine->get_forges();
+                $forges = $this->heart->forge->get_forges();
                 foreach ($forges as $forge_id => $forge) {
                     
                     if ($forge->get_has_ui_admin()) {
                         
-                        $this->forges_enqueue_ui($forge, 'admin');
+                        $this->enqueue($forge, 'admin');
+                    }
+                    
+                    if ($forge->get_has_ui_block_control()) {
+                        
+                        $this->enqueue($forge, 'blockcontrol');
                     }
                 }
             }
         );
-    }
-    
-    /**
-     * Carga los assets (scripts & styles) del los ui frontend de cada forge
-     *
-     * @since 0.0.0
-     */
-    private function forges_enqueue_ui_frontend()
-    {
         
         add_action(
             'wp_enqueue_scripts',
             function () {
                 
-                $forges = $this->engine->get_forges();
+                $forges = $this->heart->forge->get_forges();
                 foreach ($forges as $forge_id => $forge) {
                     
                     if ($forge->get_has_ui_frontend()) {
                         
-                        $this->forges_enqueue_ui($forge, 'frontend');
+                        $this->enqueue($forge, 'frontend');
                     }
                 }
             }
         );
     }
-    
-    /**
-     * Registra custom renders para core blocks
-     *
-     * @since 0.0.0
-     */
-    private function forges_register_core_blocks_render()
+}
+
+
+============================================================
+
+class\Heart\UI\Main.php
+----------------------------------------------
+Archivo: class\Heart\UI\Main.php
+----------------------------------------------
+
+<?php
+
+namespace Poeticsoft\Heart\UI;
+
+use Poeticsoft\Heart\Main as Heart;
+use Poeticsoft\Heart\UI\Blocks;
+use Poeticsoft\Heart\UI\CoreBlocks;
+use Poeticsoft\Heart\UI\Enqueue;
+use Poeticsoft\Heart\UI\MetaBoxes;
+
+class Main
+{
+    public $heart;
+    public $blocks;
+    public $core_blocks;
+    public $enqueue;
+    public $meta_boxes;
+
+    public function __construct(Heart $heart)
     {
         
-        $forges = $this->engine->get_forges();
-        foreach ($forges as $forge_id => $forge) {
-            
-            if ($forge->get_has_ui_core_blocks()) {
-                
-                $forge_core_block = $forge->get_core_block();
-                $forge_core_blocks = $forge_core_block->get_core_blocks();
-                
-                foreach ($forge_core_blocks as $block_name => $forge_core_block) {
-                    
-                    $block_render = 'render_block_' . $block_name;
-                    
-                    add_filter(
-                        $block_render,
-                        [$forge_core_block, 'render'],
-                        10,
-                        2
-                    );
-                }
-            }
-        }
+        $this->heart = $heart;
+        
+        $this->blocks = new Blocks($this);
+        $this->core_blocks = new CoreBlocks($this);
+        $this->enqueue = new Enqueue($this);
+        $this->meta_boxes = new MetaBoxes($this);
+        
+        $this->init();
     }
     
-    /**
-     * Registra los metaboxes de los forges
-     *
-     * @since 0.0.0
-     */
-    private function forges_add_ui_meta_boxes()
+    public function init()
+    {
+        
+        add_action(
+            'init',
+            function () {
+        
+                load_plugin_textdomain(
+                    'poeticsoft-heart',
+                    false,
+                    dirname($this->heart->get_basename()) . '/languages'
+                );
+            }
+        );
+    }
+}
+
+
+============================================================
+
+class\Heart\UI\MetaBoxes.php
+----------------------------------------------
+Archivo: class\Heart\UI\MetaBoxes.php
+----------------------------------------------
+
+<?php
+
+namespace Poeticsoft\Heart\UI;
+
+use Poeticsoft\Heart\UI\Main as UI;
+
+class MetaBoxes
+{
+    private $heart;
+    private $ui;
+
+    public function __construct(UI $ui)
+    {
+        $this->ui = $ui;
+        $this->heart = $ui->heart;
+        
+        $this->add();
+    }
+    
+    private function add()
     {
         
         add_action(
             'add_meta_boxes',
             function () {
                 
-                $forges = $this->engine->get_forges();
+                $forges = $this->heart->forge->get_forges();
                 foreach ($forges as $forge_id => $forge) {
                     
                     if ($forge->get_has_ui_meta_boxes()) {
@@ -1668,199 +1596,6 @@ class UI
                 }
             }
         );
-    }
-    
-    /**
-     * Lanza los procesos de carga para
-     * - languages
-     * - assets
-     * - blocks
-     * - coreblocks
-     *
-     * @since 0.0.0
-     */
-    public function init()
-    {
-        
-        // Languages
-        add_action(
-            'init',
-            function () {
-        
-                load_plugin_textdomain(
-                    'poeticsoft-heart',
-                    false,
-                    dirname($this->engine->get_basename()) . '/languages'
-                );
-            }
-        );
-        
-        // // Elementos comunes de los blocks (categoria, iconos, etc)
-        $this->forges_register_blocks_common();
-        
-        // // Registor de los blocks
-        $this->forges_register_blocks();
-        
-        // Assets del admin (Scripts & Styles)
-        $this->forges_enqueue_ui_admin();
-        
-        // Assets del frontend (Scripts & Styles)
-        $this->forges_enqueue_ui_frontend();
-        
-        // Metaboxes
-        $this->forges_add_ui_meta_boxes();
-    }
-    
-    public function register_forges_parts()
-    {
-                
-        // Render de core blocks after forges init
-        $this->forges_register_core_blocks_render();
-    }
-}
-
-
-============================================================
-
-class\Heart\Updater.php
-----------------------------------------------
-Archivo: class\Heart\Updater.php
-----------------------------------------------
-
-<?php
-
-namespace Poeticsoft\Heart;
-
-use YahnisElsts\PluginUpdateChecker\v5\PucFactory;
-
-/**
- * Clase Updater - Gestor de actualizaciones.
- *
- * Facilita la integración con la librería Plugin Update Checker (PUC) para
- * permitir que los plugins del ecosistema se actualicen desde servidores propios.
- *
- * @package Poeticsoft\Heart
- * @since 0.0.0
- */
-class Updater
-{
-    /**
-     * Inicializa el mecanismo de actualizaciones para un plugin específico.
-     *
-     * @param string $file       Ruta absoluta al archivo principal del plugin.
-     * @param string $slug       Slug identificador del plugin (ej: 'poeticsoft-heart').
-     * @param string $server_url URL del archivo metadata JSON del servidor (opcional).
-     * @return void
-     */
-    public static function init(string $file, string $slug, string $server_url = '')
-    {
-        // 1. Verificar si la librería está disponible vía Composer
-        if (!class_exists('YahnisElsts\PluginUpdateChecker\v5\PucFactory')) {
-            \Poeticsoft\log(
-                "Update Checker no disponible para: {$slug}",
-                'WARNING',
-                'UPDATES'
-            );
-            return;
-        }
-
-        // 2. Establecer URL por defecto si no se provee una personalizada
-        if (empty($server_url)) {
-            $server_url = "https://poeticsoft.com/plugins/{$slug}/info.json";
-        }
-
-        try {
-            // 3. Construir y registrar el checker
-            $updateChecker = PucFactory::buildUpdateChecker(
-                $server_url,
-                $file,
-                $slug
-            );
-
-            // Opcional: Configurar autenticación si el servidor lo requiere
-            // $updateChecker->setAuthentication('tu-token');
-
-            \Poeticsoft\log("Sistema de actualizaciones activo: {$slug}", 'INFO', 'UPDATES');
-        } catch (\Exception $e) {
-            \Poeticsoft\log(
-                "Fallo al iniciar updates para {$slug}: " . $e->getMessage(),
-                'ERROR',
-                'UPDATES'
-            );
-        }
-    }
-}
-
-
-============================================================
-
-class\Heart.php
-----------------------------------------------
-Archivo: class\Heart.php
-----------------------------------------------
-
-<?php
-
-namespace Poeticsoft;
-
-use Poeticsoft\Heart\Engine;
-
-/**
- * Clase de acceso rápido (Facade) ajustada.
- * Ubicación: class\Heart.php
- */
-class Heart
-{
-    /**
-     * Acceso directo al sistema de logs.
-     * Ahora acepta el mensaje y lo envía automáticamente al Engine.
-     *
-     * @param mixed $mensaje Datos a registrar. [cite: 255]
-     * @param string $nivel Categoría del log (INFO, ERROR, DEBUG). [cite: 256]
-     * @return bool
-     */
-    public static function log(
-        $mensaje = null,
-        $nivel = 'INFO',
-        $forge = 'HEART'
-    ) {
-        // Si no se pasa mensaje, seguimos retornando la instancia para mantener compatibilidad
-        if ($mensaje === null) {
-            
-            return Engine::get_instance()->logging;
-        }
-
-        // Si hay mensaje, lo enviamos directamente al servicio de logging del Engine
-        return Engine::get_instance()->logging->log($mensaje, $nivel, $forge);
-    }
-
-    /**
-     * Acceso al gestor de interfaz de usuario (UI).
-     * * @return \Poeticsoft\Heart\UI
-     */
-    public static function ui()
-    {
-        return Engine::get_instance()->ui;
-    }
-
-    /**
-     * Recupera la instancia de un Forge (plugin) específico por su slug.
-     * * @param string $slug Identificador del plugin.
-     * @return \Poeticsoft\Heart\ForgeInterface|null
-     */
-    public static function forge(string $slug)
-    {
-        $engine = Engine::get_instance();
-        return $engine->forges[$slug] ?? null;
-    }
-    
-    /**
-     * Acceso al motor central para operaciones avanzadas.
-     * * @return \Poeticsoft\Heart\Engine
-     */
-    public static function engine()
-    {
-        return Engine::get_instance();
     }
 }
 
@@ -1896,48 +1631,29 @@ Archivo: poeticsoft-heart.php
 
 namespace Poeticsoft;
 
-use Poeticsoft\Heart\Engine;
+use Poeticsoft\Heart\main as Heart;
 
-/**
- * Verificación de seguridad: Evitar acceso directo al archivo.
- */
 if (!defined('ABSPATH')) {
     exit;
 }
 
-/**
- * Carga del autoloader de Composer.
- */
 if (file_exists(__DIR__ . '/vendor/autoload.php')) {
     require_once __DIR__ . '/vendor/autoload.php';
 }
 
-/**
- * Inicialización del motor principal del plugin.
- */
-new Engine();
+new Heart();
 
-/**
- * Hook de activación.
- *
- * Se ejecuta al activar el plugin. Delega la lógica al motor central.
- */
 register_activation_hook(
     __FILE__,
     function () {
-        Engine::activate();
+        Heart::activate();
     }
 );
 
-/**
- * Hook de desactivación.
- *
- * Se ejecuta al desactivar el plugin. Limpia cachés y estados temporales.
- */
 register_deactivation_hook(
     __FILE__,
     function () {
-        Engine::deactivate();
+        Heart::deactivate();
     }
 );
 
