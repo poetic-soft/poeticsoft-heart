@@ -1,6 +1,6 @@
 ============================================================
 CÓDIGO INTEGRAL DEL PLUGIN: POETICSOFT-HEART
-Generado el: 2026-03-07 00:12:05
+Generado el: 2026-03-07 21:52:30
 ============================================================
 
 class\Heart\API\Auth.php
@@ -375,38 +375,94 @@ class WhiteList
 
 ============================================================
 
-class\Heart\Admin\Dashboard.php
+class\Heart\Admin\Dashboard\Forges.php
 ----------------------------------------------
-Archivo: class\Heart\Admin\Dashboard.php
+Archivo: class\Heart\Admin\Dashboard\Forges.php
 ----------------------------------------------
 
 <?php
 
-namespace Poeticsoft\Heart\Admin;
+namespace Poeticsoft\Heart\Admin\Dashboard;
+
+use Poeticsoft\Heart\Admin\Dashboard\Main as Dashboard;
+
+class Forges
+{
+    private $dashboard;
+    private $heart;
+    
+    public function __construct(Dashboard $dashboard)
+    {
+        $this->dashboard = $dashboard;
+        $this->heart = $dashboard->admin->heart;
+    }
+}
+
+
+============================================================
+
+class\Heart\Admin\Dashboard\Main.php
+----------------------------------------------
+Archivo: class\Heart\Admin\Dashboard\Main.php
+----------------------------------------------
+
+<?php
+
+namespace Poeticsoft\Heart\Admin\Dashboard;
 
 use Poeticsoft\Heart\Admin\Main as Admin;
+use Poeticsoft\Heart\Admin\Dashboard\Own;
+use Poeticsoft\Heart\Admin\Dashboard\Forges;
 
-class Dashboard
+class Main
 {
-    private $heart;
     private $admin;
     
     public function __construct(Admin $admin)
     {
         $this->admin = $admin;
-        $this->heart = $admin->heart;
         
         add_action(
             'wp_dashboard_setup',
             [
                 $this,
-                'add_dashboards_widgets'
+                'add_dashboard_widgets'
             ]
         );
     }
     
-    public function add_dashboards_widgets()
+    public function add_dashboard_widgets()
     {
+        
+        $self_dashboards_widgets = new Own($this);
+        
+        $forges_dashboards_widgets = new Forges($this);
+    }
+}
+
+
+============================================================
+
+class\Heart\Admin\Dashboard\Own.php
+----------------------------------------------
+Archivo: class\Heart\Admin\Dashboard\Own.php
+----------------------------------------------
+
+<?php
+
+namespace Poeticsoft\Heart\Admin\Dashboard;
+
+use Poeticsoft\Heart\Admin\Dashboard\Main as Dashboard;
+
+class Own
+{
+    private $dashboard;
+    private $heart;
+    
+    public function __construct(Dashboard $dashboard)
+    {
+        $this->dashboard = $dashboard;
+        $this->heart = $dashboard->admin->heart;
         
         wp_add_dashboard_widget(
             'mi_widget_id',
@@ -711,7 +767,7 @@ Archivo: class\Heart\Admin\Main.php
 namespace Poeticsoft\Heart\Admin;
 
 use Poeticsoft\Heart\Main as Heart;
-use Poeticsoft\Heart\Admin\Dashboard;
+use Poeticsoft\Heart\Admin\Dashboard\Main as Dashboard;
     
 class Main
 {
@@ -825,6 +881,8 @@ interface ForgeInterface
     public function get_plugin_uri();
     
     // -------------------------------------------------------------------------------
+    
+    public function get_has_dashboard_widgets();
     
     public function get_has_ui_admin();
     

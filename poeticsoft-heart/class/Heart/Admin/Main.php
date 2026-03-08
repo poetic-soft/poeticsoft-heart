@@ -3,7 +3,7 @@
 namespace Poeticsoft\Heart\Admin;
 
 use Poeticsoft\Heart\Main as Heart;
-use Poeticsoft\Heart\Admin\Dashboard;
+use Poeticsoft\Heart\Admin\Dashboard\Main as Dashboard;
     
 class Main
 {

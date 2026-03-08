@@ -22,17 +22,21 @@ interface ForgeInterface
     
     // -------------------------------------------------------------------------------
     
+    public function get_has_dashboard_widgets();
+    
     public function get_has_ui_admin();
     
     public function get_has_ui_frontend();
     
+    public function get_has_ui_blocks();
+    
     public function get_has_ui_core_blocks();
+    
+    public function get_has_ui_block_control();
     
     public function get_has_ui_core_configs();
     
     public function get_has_ui_meta_boxes();
-    
-    public function get_has_ui_block_control();
     
     public function get_has_api();
     

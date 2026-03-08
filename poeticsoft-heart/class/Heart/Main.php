@@ -30,10 +30,6 @@ class Main
     
     // -------------------------------------------------------------------------------
     
-    public $log;
-    
-    // -------------------------------------------------------------------------------
-    
     private function __clone()
     {
     }
@@ -163,9 +159,9 @@ class Main
         string $forge = 'HEART'
     ): bool {
         
-        if (!defined('WP_DEBUG') || !WP_DEBUG) {
-            return false;
-        }
+        // if (!defined('WP_DEBUG') || !WP_DEBUG) {
+        //     return false;
+        // }
 
         $text = is_string($mensaje) ?
         $mensaje
@@ -173,26 +169,11 @@ class Main
         json_encode($mensaje, JSON_PRETTY_PRINT);
         $fecha = current_time('Y-m-d H:i:s');
         $entrada = "[{$fecha}] [{$nivel}] [{$forge}]: {$text}" . PHP_EOL;
-
-        if (
-            is_writable(dirname($this->log_file))
-            ||
-            (
-                file_exists($this->log_file)
-                &&
-                is_writable($this->log_file)
-            )
-        ) {
-            
-            return (bool) error_log(
-                $entrada,
-                3,
-                $this->log_file
-            );
-        }
-
-        error_log("HEART_LOG_FALLBACK: " . $entrada);
         
-        return false;
+        return (bool) error_log(
+            $entrada,
+            3,
+            $this->log_file
+        );
     }
 }
