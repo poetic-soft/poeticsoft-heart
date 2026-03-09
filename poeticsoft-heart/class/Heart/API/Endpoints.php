@@ -39,8 +39,6 @@ class Endpoints
                 $forge->get_id();
                                         
                 $endpoints = $forge_api->get_endpoints();
-                
-                $forge->data['endpoints'] = [];
                     
                 foreach ($endpoints as $version => $sections) {
         
@@ -55,7 +53,6 @@ class Endpoints
                             $route['path'];
                             
                             $endpoint = $namespace . '/' . $path;
-                            $forge->data['endpoints'][] = $endpoint;
                 
                             register_rest_route(
                                 $namespace,

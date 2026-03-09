@@ -1,6 +1,6 @@
 ============================================================
 CÓDIGO INTEGRAL DEL PLUGIN: POETICSOFT-HEART
-Generado el: 2026-03-07 21:52:30
+Generado el: 2026-03-09 02:15:41
 ============================================================
 
 class\Heart\API\Auth.php
@@ -142,8 +142,6 @@ class Endpoints
                 $forge->get_id();
                                         
                 $endpoints = $forge_api->get_endpoints();
-                
-                $forge->data['endpoints'] = [];
                     
                 foreach ($endpoints as $version => $sections) {
         
@@ -158,7 +156,6 @@ class Endpoints
                             $route['path'];
                             
                             $endpoint = $namespace . '/' . $path;
-                            $forge->data['endpoints'][] = $endpoint;
                 
                             register_rest_route(
                                 $namespace,
@@ -175,6 +172,68 @@ class Endpoints
             }
         }
     }
+}
+
+
+============================================================
+
+class\Heart\API\ForgeAPI.php
+----------------------------------------------
+Archivo: class\Heart\API\ForgeAPI.php
+----------------------------------------------
+
+<?php
+
+namespace Poeticsoft\Heart\API;
+
+use Poeticsoft\Heart\Heart;
+use Poeticsoft\Heart\ForgeInterface;
+
+/**
+ * Plantilla para la API de cada forge
+ * Se ampliará con funcionalidades extra si es necesario
+ * evitando modificar la api de cada forge que sólo se dedica a codificar endpoints
+ *
+ * @since 0.0.0
+ */
+abstract class ForgeAPI
+{
+    protected $forge;
+    protected $heart;
+    
+    /**
+     * Envía una respuesta unificada siguiendo el estándar de Poeticsoft Forge.
+     * @param mixed $data Datos a enviar o mensaje de error.
+     * @param int $status Código de estado HTTP.
+     * @param bool $success Indica si la operación fue exitosa.
+     * @return \WP_REST_Response
+     */
+    public function send_response(
+        $data,
+        int $status = 200,
+        bool $success = true
+    ): \WP_REST_Response {
+        
+        // Accedemos a la función send_response de la API central a través del Heart
+        return $this->heart->api->send_response($data, $status, $success);
+    }
+
+    /**
+     * Debe retornar el array de whitelist.
+     */
+    abstract public function get_whitelist(): array;
+
+    /**
+     * Debe retornar el array de configuración de endpoints.
+     */
+    abstract public function get_endpoints(): array;
+    
+    /**
+     * Pueden incorporarse funcionalidades extras para la API de los forges
+     *
+     * public function extra() { }
+     *
+     */
 }
 
 
@@ -375,26 +434,44 @@ class WhiteList
 
 ============================================================
 
-class\Heart\Admin\Dashboard\Forges.php
+class\Heart\Admin\Dashboard\Base.php
 ----------------------------------------------
-Archivo: class\Heart\Admin\Dashboard\Forges.php
+Archivo: class\Heart\Admin\Dashboard\Base.php
 ----------------------------------------------
 
 <?php
 
 namespace Poeticsoft\Heart\Admin\Dashboard;
 
-use Poeticsoft\Heart\Admin\Dashboard\Main as Dashboard;
+use Poeticsoft\Heart\Forge\DashboardTemplate;
 
-class Forges
+class Base extends DashboardTemplate
 {
-    private $dashboard;
-    private $heart;
-    
-    public function __construct(Dashboard $dashboard)
+    public function set_values()
     {
-        $this->dashboard = $dashboard;
-        $this->heart = $dashboard->admin->heart;
+                
+        $this->id = 'base';
+        $this->title = 'Base';
+        $this->description = 'Dashboard Base';
+    
+        $this->options = [
+            [
+                'key' => 'string_a',
+                'field_type' => 'string',
+                'title' => 'Base String A',
+                'description' => 'Option Base String A',
+                'value' => 'default',
+                'type' => 'text'
+            ],
+            [
+                'key' => 'string_b',
+                'field_type' => 'string',
+                'title' => 'Base String B',
+                'description' => 'Option Base String B',
+                'value' => 'default',
+                'type' => 'text'
+            ]
+        ];
     }
 }
 
@@ -408,76 +485,228 @@ Archivo: class\Heart\Admin\Dashboard\Main.php
 
 <?php
 
+// https://rudrastyh.com/wordpress/dashboard-widgets.html
+
 namespace Poeticsoft\Heart\Admin\Dashboard;
 
 use Poeticsoft\Heart\Admin\Main as Admin;
-use Poeticsoft\Heart\Admin\Dashboard\Own;
-use Poeticsoft\Heart\Admin\Dashboard\Forges;
+use Poeticsoft\Heart\Admin\Dashboard\Base;
 
 class Main
 {
-    private $admin;
+    public $admin;
+    private $dashboards;
     
     public function __construct(Admin $admin)
     {
         $this->admin = $admin;
         
+        $this->dashboards = [
+            new Base($this, $this->admin->heart)
+        ];
+        
         add_action(
             'wp_dashboard_setup',
             [
                 $this,
-                'add_dashboard_widgets'
+                'dashboard_setup'
+            ]
+        );
+        
+        add_action(
+            'admin_init',
+            [
+                $this,
+                'admin_init'
             ]
         );
     }
+    
+    // -------------------------------------------------------------------------------
+    
+    public function get_full_id($dashboard)
+    {
+        return str_replace(
+            '-',
+            '_',
+            $this->admin->heart->get_id() .
+            (
+                
+                $dashboard->forge ?
+                '_' . $dashboard->forge->get_id()
+                :
+                ''
+            ) .
+            '_' .
+            $dashboard->id
+        );
+    }
+    
+    // -------------------------------------------------------------------------------
+    
+    public function dashboard_setup()
+    {
+                
+        $this->add_dashboard_widgets();
+        
+        $this->add_forges_dashboard_widgets();
+    }
+    
+    // -------------------------------------------------------------------------------
     
     public function add_dashboard_widgets()
     {
         
-        $self_dashboards_widgets = new Own($this);
-        
-        $forges_dashboards_widgets = new Forges($this);
+        foreach ($this->dashboards as $dashboard) {
+            
+            $this->add_dashboard_widget($dashboard);
+        }
     }
-}
-
-
-============================================================
-
-class\Heart\Admin\Dashboard\Own.php
-----------------------------------------------
-Archivo: class\Heart\Admin\Dashboard\Own.php
-----------------------------------------------
-
-<?php
-
-namespace Poeticsoft\Heart\Admin\Dashboard;
-
-use Poeticsoft\Heart\Admin\Dashboard\Main as Dashboard;
-
-class Own
-{
-    private $dashboard;
-    private $heart;
     
-    public function __construct(Dashboard $dashboard)
+    public function add_forges_dashboard_widgets()
     {
-        $this->dashboard = $dashboard;
-        $this->heart = $dashboard->admin->heart;
+        
+        $forges = $this->admin->heart->forge->get_forges();
+        
+        foreach ($forges as $forge) {
+            
+            if ($forge->get_has_dashboard_widgets()) {
+                
+                $dashboards = $forge->dashboard->get_dashboard_widgets();
+                
+                foreach ($dashboards as $dashboard) {
+                    
+                    $this->add_dashboard_widget($dashboard);
+                }
+            }
+        }
+    }
+    
+    public function add_dashboard_widget($dashboard)
+    {
+        
+        $full_id = $this->get_full_id($dashboard);
         
         wp_add_dashboard_widget(
-            'mi_widget_id',
-            'Heart',
+            $full_id,
+            $dashboard->title,
             [
-                $this,
-                'mi_widget_render'
-            ]
+                $dashboard,
+                'content'
+            ],
+            null,
+            $dashboard->args,
+            $dashboard->context,
+            $dashboard->priority
         );
     }
     
-    public function mi_widget_render()
+    // -------------------------------------------------------------------------------
+    
+    public function admin_init()
+    {
+                
+        foreach ($this->dashboards as $dashboard) {
+        
+            $this->create_section($dashboard);
+        }
+        
+        $forges = $this->admin->heart->forge->get_forges();
+        
+        foreach ($forges as $forge) {
+            
+            if ($forge->get_has_dashboard_widgets()) {
+                
+                $dashboards = $forge->dashboard->get_dashboard_widgets();
+                
+                foreach ($dashboards as $dashboard) {
+                    
+                    $this->create_section($dashboard);
+                }
+            }
+        }
+    }
+    
+    // -------------------------------------------------------------------------------
+    
+    public function create_section($dashboard)
     {
         
-        echo '<div class="Content">contenido_del_widget</div>';
+        $full_id = $this->get_full_id($dashboard);
+        
+        add_settings_section(
+            $full_id,
+            $dashboard->title,
+            function () use ($dashboard) {
+                
+                echo $dashboard->description;
+            },
+            'poeticsoft_heart'
+        );
+                
+        foreach ($dashboard->options as $option) {
+        
+            $this->create_option(
+                $option,
+                $full_id
+            );
+        }
+    }
+    
+    // -------------------------------------------------------------------------------
+    
+    public function create_option($option, $full_id)
+    {
+        
+        $option_name = $full_id . '_' . $option['key'];
+        
+        $admin_option = get_option($option_name);
+        if (!$admin_option) {
+            
+            update_option($option_name, $option['value']);
+        }
+        
+        register_setting(
+            $full_id,
+            $option_name,
+            [
+                'type' => $option['field_type'],
+                'default' => $option['value'],
+                'label' => $option['title'],
+                'description' => $option['description'],
+                'sanitize_callback' => function ($value) {
+                    
+                    return $value;
+                },
+                'show_in_rest' => true,
+                'default' => $option['value']
+            ]
+        );
+        
+        add_settings_field(
+            $option_name,
+            '<label for="' . $option_name . '">' .
+                $option['title'] .
+            '</label>',
+            function () use ($option_name, $option) {
+                
+                $value = get_option(
+                    $option_name,
+                    $option['value']
+                );
+                
+                echo '<div class="Option">
+                    <span class="label">' .
+                        $option['title'] .
+                    '</span>
+                    <span class="Value">' .
+                        $value .
+                    '</span>
+                </option>';
+            },
+            'poeticsoft_heart',
+            $full_id
+        );
     }
 }
 
@@ -782,13 +1011,47 @@ class Main
     public function __construct(Heart $heart)
     {
         $this->heart = $heart;
-
+        
         $this->dashboard = new Dashboard($this);
+        
+        add_action(
+            'admin_menu',
+            [
+                $this,
+                'create_admin_menu'
+            ]
+        );
     }
     
     // -------------------------------------------------------------------------------
     
-    public function get_token(): string
+    public function create_admin_menu()
+    {
+        
+        add_menu_page(
+            'Poeticsoft Heart',
+            'Poeticsoft Heart',
+            'manage_options',
+            'poeticsoft_heart',
+            [$this, 'render_settings'],
+            'dashicons-admin-generic',
+            2
+        );
+    }
+    
+    public function render_settings()
+    {
+                            
+        echo '<div class="wrap">
+        <h1>Poeticsoft Heart Settings List</h1>';
+        settings_fields('poeticsoft_heart');
+        do_settings_sections('poeticsoft_heart');
+        echo '</div>';
+    }
+    
+    // -------------------------------------------------------------------------------
+    
+    public function get_token()
     {
         if (null === $this->token) {
             
@@ -853,6 +1116,119 @@ class Updater
 
 ============================================================
 
+class\Heart\Forge\BlockControlTemplate.php
+----------------------------------------------
+Archivo: class\Heart\Forge\BlockControlTemplate.php
+----------------------------------------------
+
+<?php
+
+namespace Poeticsoft\Heart\Forge;
+
+abstract class BlockControlTemplate
+{
+    protected $forge;
+    protected $block_control;
+    
+    public $block_name;
+    public $block_attributes;
+
+    public function __construct($forge, $parent)
+    {
+        $this->forge = $forge;
+        $this->block_control = $parent;
+        
+        $this->block_name = $this->get_block_name();
+        $this->block_attributes = $this->get_block_attributes();
+        
+        $this->init();
+    }
+
+    abstract public function get_block_name();
+    abstract public function get_block_attributes();
+
+    protected function init()
+    {
+    }
+}
+
+
+============================================================
+
+class\Heart\Forge\DashboardTemplate.php
+----------------------------------------------
+Archivo: class\Heart\Forge\DashboardTemplate.php
+----------------------------------------------
+
+<?php
+
+namespace Poeticsoft\Heart\Forge;
+
+abstract class DashboardTemplate
+{
+    public $dashboard;
+    public $heart;
+    public $forge;
+    
+    public $id;
+    public $title;
+    public $description;
+    public $args = [['test' => 'value']];
+    public $context = 'normal'; // 'normal', 'side', 'column3', or 'column4'. Default 'normal'
+    public $priority = 'core'; // 'high', 'core', 'default', or 'low'. Default 'core'.
+    public $options;
+
+    public function __construct($parent, $heart, $forge = null)
+    {
+        $this->dashboard = $parent;
+        $this->heart = $heart;
+        $this->forge = $forge;
+        
+        $this->set_values();
+    }
+
+    abstract public function set_values();
+    
+    public function content($uno, $args)
+    {
+        
+        $full_id = str_replace(
+            '-',
+            '_',
+            $this->heart->get_id() .
+            (
+                
+                $this->forge ?
+                '_' . $this->forge->get_id()
+                :
+                ''
+            ) .
+            '_' .
+            $this->id
+        );
+        
+        $options = array_map(
+            function ($option) use ($full_id) {
+                
+                $option['option_name'] = $full_id . '_' . $option['key'];
+                
+                return $option;
+            },
+            $this->options
+        );
+        
+        echo '<div class="DashboardWidgetContent">
+            <script>
+                const 
+                json_encode($options, JSON_PRETTY_PRINT) .
+            </script>
+        </div>';
+    }
+}
+
+
+============================================================
+
 class\Heart\Forge\ForgeInterface.php
 ----------------------------------------------
 Archivo: class\Heart\Forge\ForgeInterface.php
@@ -888,13 +1264,15 @@ interface ForgeInterface
     
     public function get_has_ui_frontend();
     
+    public function get_has_ui_blocks();
+    
     public function get_has_ui_core_blocks();
+    
+    public function get_has_ui_block_control();
     
     public function get_has_ui_core_configs();
     
     public function get_has_ui_meta_boxes();
-    
-    public function get_has_ui_block_control();
     
     public function get_has_api();
     
@@ -1022,10 +1400,6 @@ class Main
     private readonly string $url;
     private readonly string $basename;
     private readonly string $log_file;
-    
-    // -------------------------------------------------------------------------------
-    
-    public $log;
     
     // -------------------------------------------------------------------------------
     
@@ -1158,9 +1532,9 @@ class Main
         string $forge = 'HEART'
     ): bool {
         
-        if (!defined('WP_DEBUG') || !WP_DEBUG) {
-            return false;
-        }
+        // if (!defined('WP_DEBUG') || !WP_DEBUG) {
+        //     return false;
+        // }
 
         $text = is_string($mensaje) ?
         $mensaje
@@ -1168,27 +1542,12 @@ class Main
         json_encode($mensaje, JSON_PRETTY_PRINT);
         $fecha = current_time('Y-m-d H:i:s');
         $entrada = "[{$fecha}] [{$nivel}] [{$forge}]: {$text}" . PHP_EOL;
-
-        if (
-            is_writable(dirname($this->log_file))
-            ||
-            (
-                file_exists($this->log_file)
-                &&
-                is_writable($this->log_file)
-            )
-        ) {
-            
-            return (bool) error_log(
-                $entrada,
-                3,
-                $this->log_file
-            );
-        }
-
-        error_log("HEART_LOG_FALLBACK: " . $entrada);
         
-        return false;
+        return (bool) error_log(
+            $entrada,
+            3,
+            $this->log_file
+        );
     }
 }
 
@@ -1288,8 +1647,6 @@ class Blocks
                         );
                         
                         $this->heart->forge->get_forges();
-                        
-                        $forge->data['blocks'] = [];
                        
                         foreach ($block_names as $key => $block_name) {
 
@@ -1297,24 +1654,19 @@ class Blocks
                             
                         $registered = register_block_type($block_json_dir);
                             
-                            if ($registered) {
-                                
-                                $forge->data['blocks'][] = $block_name;
-                            }
-                            
-                        /**
-                         * DEBUG
-                         */
-                        // $forge_name = $forge->get_name();
-                        // $this->heart->logging->log('---------------------------------------------');
-                        // $this->heart->logging->log(
-                        //     'registered block ' .
-                        //     $block_name .
-                        //     ' en ' .
-                        //     'Poeticsoft ' . $forge_name .
-                        //     ' -> ' .
-                        //     ( $registered ? 'SI' : 'NO')
-                        // );
+                            /**
+                             * DEBUG
+                             */
+                            // $forge_name = $forge->get_name();
+                            // $this->heart->logging->log('---------------------------------------------');
+                            // $this->heart->logging->log(
+                            //     'registered block ' .
+                            //     $block_name .
+                            //     ' en ' .
+                            //     'Poeticsoft ' . $forge_name .
+                            //     ' -> ' .
+                            //     ( $registered ? 'SI' : 'NO')
+                            // );
                         }
                     }
                 }

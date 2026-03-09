@@ -1,6 +1,6 @@
 ========================================
 ESTRUCTURA DEL PROYECTO: POETICSOFT-HEART
-Generado el: 2026-03-07 21:52:30
+Generado el: 2026-03-09 02:15:40
 ========================================
 
 ├── class
@@ -8,17 +8,19 @@ Generado el: 2026-03-07 21:52:30
 │       ├── API
 │       │   ├── Auth.php
 │       │   ├── Endpoints.php
+│       │   ├── ForgeAPI.php
 │       │   ├── Main.php
 │       │   └── WhiteList.php
 │       ├── Admin
 │       │   ├── Dashboard
-│       │   │   ├── Forges.php
-│       │   │   ├── Main.php
-│       │   │   └── Own.php
+│       │   │   ├── Base.php
+│       │   │   └── Main.php
 │       │   ├── Inspector.php
 │       │   ├── Main.php
 │       │   └── Updater.php
 │       ├── Forge
+│       │   ├── BlockControlTemplate.php
+│       │   ├── DashboardTemplate.php
 │       │   ├── ForgeInterface.php
 │       │   └── Main.php
 │       ├── Main.php

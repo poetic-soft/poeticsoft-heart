@@ -86,8 +86,6 @@ class Blocks
                         );
                         
                         $this->heart->forge->get_forges();
-                        
-                        $forge->data['blocks'] = [];
                        
                         foreach ($block_names as $key => $block_name) {
 
@@ -95,24 +93,19 @@ class Blocks
                             
                         $registered = register_block_type($block_json_dir);
                             
-                            if ($registered) {
-                                
-                                $forge->data['blocks'][] = $block_name;
-                            }
-                            
-                        /**
-                         * DEBUG
-                         */
-                        // $forge_name = $forge->get_name();
-                        // $this->heart->logging->log('---------------------------------------------');
-                        // $this->heart->logging->log(
-                        //     'registered block ' .
-                        //     $block_name .
-                        //     ' en ' .
-                        //     'Poeticsoft ' . $forge_name .
-                        //     ' -> ' .
-                        //     ( $registered ? 'SI' : 'NO')
-                        // );
+                            /**
+                             * DEBUG
+                             */
+                            // $forge_name = $forge->get_name();
+                            // $this->heart->logging->log('---------------------------------------------');
+                            // $this->heart->logging->log(
+                            //     'registered block ' .
+                            //     $block_name .
+                            //     ' en ' .
+                            //     'Poeticsoft ' . $forge_name .
+                            //     ' -> ' .
+                            //     ( $registered ? 'SI' : 'NO')
+                            // );
                         }
                     }
                 }
