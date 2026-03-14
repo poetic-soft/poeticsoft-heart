@@ -22,15 +22,15 @@ class Updater
     //     }
 
     //     try {
-            
+
     //         $updateChecker = PucFactory::buildUpdateChecker(
     //             $server_url,
     //             $file,
     //             $slug
     //         );
-            
+
     //         \Poeticsoft\log("Sistema de actualizaciones activo: {$slug}", 'INFO', 'UPDATES');
-            
+
     //     } catch (\Exception $e) {
     //         \Poeticsoft\log(
     //             "Fallo al iniciar updates para {$slug}: " . $e->getMessage(),

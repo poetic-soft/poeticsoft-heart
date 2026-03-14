@@ -1,8 +1,8 @@
 <?php
 
-namespace Poeticsoft\Heart\Forge;
+namespace Poeticsoft\Heart\Template;
 
-abstract class DashboardTemplate
+abstract class Dashboard
 {
     public $dashboard;
     public $heart;

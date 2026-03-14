@@ -17,14 +17,23 @@ class Enqueue
         $this->enqueue_ui();
     }
 
-    private function enqueue($forge, $section)
+    private function enqueue($section, $forge = null)
     {
 
         $heart_id = $this->heart->get_id();
-        $forge_id = $forge->get_id();
-        $enqueue_id = $heart_id . '-' . $forge_id . '-' . $section;
-        $forge_path = $forge->get_plugin_path();
-        $forge_uri = $forge->get_plugin_uri();
+
+        $id = $heart_id;
+        $path = $this->heart->get_path();
+        $uri = $this->heart->get_url();
+
+        if ($forge) {
+
+            $id .= $forge->get_id();
+            $path = $forge->get_plugin_path();
+            $uri = $forge->get_plugin_uri();
+        }
+
+        $enqueue_id = $id . '-' . $section;
 
         $deps = [
             'blockcontrol' => [
@@ -65,17 +74,17 @@ class Enqueue
 
         wp_enqueue_script(
             $enqueue_id,
-            $forge_uri . '/ui/' . $section . '/main.js',
+            $uri . '/ui/' . $section . '/main.js',
             $deps[$section],
-            filemtime($forge_path . '/ui/' . $section . '/main.js'),
+            filemtime($path . '/ui/' . $section . '/main.js'),
             true
         );
 
         wp_enqueue_style(
             $enqueue_id,
-            $forge_uri . '/ui/' . $section . '/main.css',
+            $uri . '/ui/' . $section . '/main.css',
             [],
-            filemtime($forge_path . '/ui/' . $section . '/main.css'),
+            filemtime($path . '/ui/' . $section . '/main.css'),
             'all'
         );
     }
@@ -87,6 +96,8 @@ class Enqueue
             'admin_enqueue_scripts',
             function () {
 
+                $this->enqueue('admin');
+
                 $forges = $this->heart->forge->get_forges();
                 foreach ($forges as $forge_id => $forge) {
 
@@ -97,7 +108,7 @@ class Enqueue
 
                     if ($forge->get_has_ui_block_control()) {
 
-                        $this->enqueue($forge, 'blockcontrol');
+                        $this->enqueue('blockcontrol', $forge);
                     }
                 }
             }
@@ -107,12 +118,15 @@ class Enqueue
             'wp_enqueue_scripts',
             function () {
 
+
+                $this->enqueue('frontend');
+
                 $forges = $this->heart->forge->get_forges();
                 foreach ($forges as $forge_id => $forge) {
 
                     if ($forge->get_has_ui_frontend()) {
 
-                        $this->enqueue($forge, 'frontend');
+                        $this->enqueue('frontend', $forge);
                     }
                 }
             }

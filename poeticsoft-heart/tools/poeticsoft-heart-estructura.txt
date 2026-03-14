@@ -1,6 +1,6 @@
 ========================================
 ESTRUCTURA DEL PROYECTO: POETICSOFT-HEART
-Generado el: 2026-03-14 12:00:57
+Generado el: 2026-03-14 12:15:21
 ========================================
 
 ├── class
@@ -13,7 +13,6 @@ Generado el: 2026-03-14 12:00:57
 │       │   └── WhiteList.php
 │       ├── Admin
 │       │   ├── Dashboard
-│       │   │   ├── Base.php
 │       │   │   └── Main.php
 │       │   ├── Inspector.php
 │       │   ├── Main.php

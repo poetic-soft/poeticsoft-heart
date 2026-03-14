@@ -15,26 +15,26 @@ class Main
     {
         $this->admin = $admin;
         $this->heart = $admin->heart;
-        
+
         add_action(
             'add_metaboxes',
             [$this, 'add_metaboxes']
         );
     }
-    
+
     private function add_metaboxes()
     {
-                
+
         $forges = $this->heart->forge->get_forges();
         foreach ($forges as $forge_id => $forge) {
-            
+
             if ($forge->get_has_ui_metaboxes()) {
-                
+
                 $forge_metabox = $forge->get_metabox();
                 $forge_metaboxes = $forge_metabox->get_metaboxes();
-                
+
                 foreach ($forge_metaboxes as $forge_metabox) {
-                                            
+
                     add_metabox(
                         $forge_metabox->id,
                         $forge_metabox->title,

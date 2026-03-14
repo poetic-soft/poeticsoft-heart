@@ -1,0 +1,31 @@
+.Metabox {
+
+  &.route {    
+
+    .Portal {
+
+      .playmotiv-page-route-wrapper {
+
+        .route-display {
+
+          padding: var(--s);
+          text-align: center;
+          border: solid 1px var(--color-borders);
+          cursor:help;
+        }
+
+        > .components-button {
+
+          width: 100%;
+          box-sizing: border-box;
+          justify-content: center;
+        }
+
+        .components-notice {
+
+          margin-top: var(--s2);
+        }
+      }
+    }
+  }
+}

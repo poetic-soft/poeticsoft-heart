@@ -2,23 +2,25 @@
 
 namespace Poeticsoft\Heart;
 
-use Poeticsoft\H;
+use Exception;
 use Poeticsoft\Heart\Admin\Main as Admin;
 use Poeticsoft\Heart\API\Main as API;
 use Poeticsoft\Heart\Forge\Main as Forge;
 use Poeticsoft\Heart\UI\Main as UI;
+use Poeticsoft\Heart\AIAgent\Main as AIAgent;
 
 class Main
 {
     // -------------------------------------------------------------------------------
-    
+
     public Admin $admin;
     public API $api;
     public Forge $forge;
     public UI $ui;
-    
+    public AIAgent $ai_agent;
+
     // -------------------------------------------------------------------------------
-    
+
     private static ?self $instance = null;
     private readonly string $id;
     private readonly string $version;
@@ -26,22 +28,20 @@ class Main
     private readonly string $path;
     private readonly string $url;
     private readonly string $basename;
-    
+
     // -------------------------------------------------------------------------------
-    
-    private function __clone()
-    {
-    }
+
+    private function __clone() {}
 
     public function __wakeup()
     {
-        throw new \Exception("No se puede deserializar un Singleton.");
+        throw new Exception("No se puede deserializar un Singleton.");
     }
 
     public static function get_instance(): self
     {
         if (null === self::$instance) {
-            
+
             self::$instance = new self();
         }
         return self::$instance;
@@ -49,25 +49,26 @@ class Main
 
     public function __construct()
     {
-        
+
         $id = 'poeticsoft-heart';
         $plugin_file = WP_PLUGIN_DIR . '/' . $id . '/' . $id . '.php';
-        
+
         $this->id = $id;
         $this->version = '0.0.0';
         $this->plugin_file = $plugin_file;
         $this->basename = plugin_basename($plugin_file);
         $this->path = plugin_dir_path($plugin_file);
         $this->url = plugin_dir_url($plugin_file);
-        
+
         $this->admin = new Admin($this);
         $this->api = new API($this);
         $this->forge = new Forge($this);
         $this->ui = new UI($this);
+        $this->ai_agent = new AIAgent($this);
     }
-    
+
     // -------------------------------------------------------------------------------
-    
+
     public function get_id(): string
     {
         return $this->id;
@@ -99,7 +100,7 @@ class Main
     }
 
     // -------------------------------------------------------------------------------
-    
+
     public static function activate(): void
     {
         wp_cache_flush();
@@ -111,34 +112,34 @@ class Main
     }
 
     // -------------------------------------------------------------------------------
-    
+
     public static function uninstall(): void
     {
         wp_cache_flush();
         do_action('poeticsoft_heart_uninstall');
     }
-    
+
     // -------------------------------------------------------------------------------
-    
+
     public static function log(
         $mensaje,
         string $nivel = 'INFO',
         string $forge = 'HEART'
     ): bool {
-        
+
         // if (!defined('WP_DEBUG') || !WP_DEBUG) {
         //     return false;
         // }
-        
+
         $logfile = WP_CONTENT_DIR . '/poeticsoft-heart.log';
 
         $text = is_string($mensaje) ?
-        $mensaje
-        :
-        json_encode($mensaje, JSON_PRETTY_PRINT);
+            $mensaje
+            :
+            json_encode($mensaje, JSON_PRETTY_PRINT);
         $fecha = current_time('Y-m-d H:i:s');
         $entrada = "[{$fecha}] [{$nivel}] [{$forge}]: {$text}" . PHP_EOL;
-        
+
         return (bool) error_log(
             $entrada,
             3,

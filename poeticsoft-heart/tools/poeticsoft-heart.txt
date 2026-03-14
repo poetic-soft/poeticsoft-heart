@@ -1,6 +1,6 @@
 ============================================================
 CÓDIGO INTEGRAL DEL PLUGIN: POETICSOFT-HEART
-Generado el: 2026-03-14 12:00:57
+Generado el: 2026-03-14 12:15:22
 ============================================================
 
 class\Heart\API\Auth.php
@@ -111,12 +111,12 @@ class Endpoints
 {
     protected $api;
     protected $heart;
-    
+
     public function __construct(API $api)
     {
         $this->api = $api;
         $this->heart = $api->heart;
-        
+
         add_action(
             'rest_api_init',
             [
@@ -125,38 +125,38 @@ class Endpoints
             ]
         );
     }
-    
+
     public function register_all_forge_endpoints()
     {
-                        
+
         $forges = $this->heart->forge->get_forges();
-        
+
         foreach ($forges as $forge) {
-                
+
             if ($forge->get_has_api()) {
-                
+
                 $forge_api = $forge->get_api();
-                
+
                 $namespace = $this->heart->get_id() .
-                '/' .
-                $forge->get_id();
-                                        
+                    '/' .
+                    $forge->get_id();
+
                 $endpoints = $forge_api->get_endpoints();
-                    
+
                 foreach ($endpoints as $version => $sections) {
-        
+
                     foreach ($sections as $section => $routes) {
-                            
+
                         foreach ($routes as $route) {
-                            
+
                             $path = $version .
-                            '/' .
-                            $section .
-                            '/' .
-                            $route['path'];
-                            
+                                '/' .
+                                $section .
+                                '/' .
+                                $route['path'];
+
                             $endpoint = $namespace . '/' . $path;
-                
+
                             register_rest_route(
                                 $namespace,
                                 $path,
@@ -262,19 +262,19 @@ class Main
 
     public function __construct(Heart $heart)
     {
-                        
+
         $this->heart = $heart;
         $this->white_list = new WhiteList($this);
         $this->endpoints = new Endpoints($this);
         $this->auth = new Auth($this);
     }
-    
+
     public function send_response(
         $data,
         int $status = 200,
         bool $success = true
     ): \WP_REST_Response {
-        
+
         $response = [
             'code' => '',
             'message' => '',
@@ -284,20 +284,20 @@ class Main
                 $success
             )
         ];
-        
+
         return new \WP_REST_Response($response, $status);
     }
-    
+
     private function format_response_data(
         $data,
         int $status = 200,
         bool $success = true
     ) {
-        
+
         $fecha = new \DateTime();
         $fecha->setTimezone(new \DateTimeZone('Europe/Madrid'));
         $fecha = $fecha->format('d/m/Y H:i:s');
-        
+
         return [
             'user' => get_current_user_id(),
             'status' => $status,
@@ -347,38 +347,38 @@ class WhiteList
             'logged' => ''
         ];
     }
-    
+
     public function compile_whitelists()
     {
 
         $forges = $this->heart->forge->get_forges();
 
         foreach ($forges as $forge) {
-            
+
             if ($forge->get_has_api()) {
-                
+
                 $forge_api = $forge->get_api();
                 $whitelists = $forge_api->get_whitelist();
-                
+
                 $namespace = $this->heart->get_id() . '/' . $forge->get_id();
 
                 foreach ($whitelists as $version => $sections) {
-                    
+
                     foreach ($sections as $section => $types) {
-                        
+
                         foreach ($types as $type => $paths) {
-                            
+
                             foreach ($paths as $path) {
-                                
+
                                 $item = '/wp-json/' .
-                                $namespace .
-                                '/' .
-                                $version .
-                                '/' .
-                                $section .
-                                '/' .
-                                $path;
-                                
+                                    $namespace .
+                                    '/' .
+                                    $version .
+                                    '/' .
+                                    $section .
+                                    '/' .
+                                    $path;
+
                                 $this->white_list[$type][] = $item;
                             }
                         }
@@ -388,19 +388,19 @@ class WhiteList
         }
 
         foreach ($this->white_list as $type => $endpoints) {
-            
+
             if (empty($endpoints)) {
-                
+
                 $this->white_list_compiled[$type] = '/^$/';
-                
+
                 continue;
             }
 
             $type_regex_parts = array_map(
                 function ($endpoint) {
-                
+
                     $quoted = str_replace('/', '\/', $endpoint);
-                    
+
                     return str_replace('*', '.*', $quoted);
                 },
                 $endpoints
@@ -408,50 +408,6 @@ class WhiteList
 
             $this->white_list_compiled[$type] = '/^(' . implode('|', $type_regex_parts) . ')$/';
         }
-    }
-}
-
-
-============================================================
-
-class\Heart\Admin\Dashboard\Base.php
-----------------------------------------------
-Archivo: class\Heart\Admin\Dashboard\Base.php
-----------------------------------------------
-
-<?php
-
-namespace Poeticsoft\Heart\Admin\Dashboard;
-
-use Poeticsoft\Heart\Forge\DashboardTemplate;
-
-class Base extends DashboardTemplate
-{
-    public function set_values()
-    {
-
-        $this->id = 'base-heart';
-        $this->title = 'Base heart';
-        $this->description = 'Dashboard Heart Base';
-
-        $this->options = [
-            [
-                'key' => 'string_a',
-                'field_type' => 'string',
-                'title' => 'Base String A',
-                'description' => 'Option Base String A',
-                'value' => 'default',
-                'type' => 'text'
-            ],
-            [
-                'key' => 'string_b',
-                'field_type' => 'string',
-                'title' => 'Base String B',
-                'description' => 'Option Base String B',
-                'value' => 'default',
-                'type' => 'text'
-            ]
-        ];
     }
 }
 
@@ -471,20 +427,14 @@ namespace Poeticsoft\Heart\Admin\Dashboard;
 
 use Poeticsoft\Heart\Main as Heart;
 use Poeticsoft\Heart\Admin\Main as Admin;
-use Poeticsoft\Heart\Admin\Dashboard\Base;
 
 class Main
 {
     public $admin;
-    private $dashboards;
 
     public function __construct(Admin $admin)
     {
         $this->admin = $admin;
-
-        $this->dashboards = [
-            new Base($this, $this->admin->heart)
-        ];
 
         add_action(
             'wp_dashboard_setup',
@@ -528,25 +478,6 @@ class Main
     public function dashboard_setup()
     {
 
-        $this->add_dashboard_widgets();
-
-        $this->add_forges_dashboard_widgets();
-    }
-
-    // -------------------------------------------------------------------------------
-
-    public function add_dashboard_widgets()
-    {
-
-        foreach ($this->dashboards as $dashboard) {
-
-            $this->add_dashboard_widget($dashboard);
-        }
-    }
-
-    public function add_forges_dashboard_widgets()
-    {
-
         $forges = $this->admin->heart->forge->get_forges();
 
         foreach ($forges as $forge) {
@@ -586,11 +517,6 @@ class Main
 
     public function admin_init()
     {
-
-        foreach ($this->dashboards as $dashboard) {
-
-            $this->create_section($dashboard);
-        }
 
         $forges = $this->admin->heart->forge->get_forges();
 
@@ -712,7 +638,7 @@ class Inspector
 
     public function __construct(Admin $admin)
     {
-        
+
         $this->admin = $admin;
         $this->heart = $admin->heart;
     }
@@ -729,11 +655,10 @@ class Inspector
         $logfile = $this->heart->get_logfile();
 
         if (empty($logfile)) {
-            
+
             $results['Log System'] = '⚠️ Ruta no definida';
-            
         } else {
-            
+
             if (file_exists($logfile)) {
                 $results['Log Status'] = is_writable($logfile) ? '✅ Escribible' : '❌ Sin permisos';
             } else {
@@ -752,7 +677,7 @@ class Inspector
      */
     public function render_diagnostic_panel(): void
     {
-        
+
         if (!current_user_can('manage_options')) {
             return;
         }
@@ -760,7 +685,7 @@ class Inspector
         $is_test_mode = (isset($_GET['test_forge']) ? sanitize_key($_GET['test_forge']) : '') === '1';
 
         if (!$is_test_mode) {
-            
+
             return;
         }
 
@@ -772,7 +697,7 @@ class Inspector
             ||
             !wp_verify_nonce($_GET['_wpnonce'], 'wp_rest')
         ) {
-            
+
             wp_die(__('Seguridad fallida: Token inválido', 'poeticsoft-heart'));
         }
 
@@ -780,19 +705,19 @@ class Inspector
         $forges = $this->heart->forge->get_forges();
         $forges = array_map(
             function ($forge) {
-                
+
                 return [
-                   'name' => $forge->get_name(),
-                   'version' => $forge->get_version(),
-                   'description' => $forge->get_description(),
-                   'plugin_path' => $forge->get_plugin_path(),
-                   'plugin_uri' => $forge->get_plugin_uri(),
-                   'has_blocks' => $forge->get_has_blocks(),
-                   'has_ui_admin' => $forge->get_has_ui_admin(),
-                   'has_ui_frontend' => $forge->get_has_ui_frontend(),
-                   'has_api' => $forge->get_has_api(),
-                   'blocks' => implode(' - ', $forge->data['blocks']),
-                   'endpoints' => isset($forge->data['endpoints']) ? implode(' - ', $forge->data['endpoints']) : ''
+                    'name' => $forge->get_name(),
+                    'version' => $forge->get_version(),
+                    'description' => $forge->get_description(),
+                    'plugin_path' => $forge->get_plugin_path(),
+                    'plugin_uri' => $forge->get_plugin_uri(),
+                    'has_blocks' => $forge->get_has_blocks(),
+                    'has_ui_admin' => $forge->get_has_ui_admin(),
+                    'has_ui_frontend' => $forge->get_has_ui_frontend(),
+                    'has_api' => $forge->get_has_api(),
+                    'blocks' => implode(' - ', $forge->data['blocks']),
+                    'endpoints' => isset($forge->data['endpoints']) ? implode(' - ', $forge->data['endpoints']) : ''
                 ];
             },
             $forges
@@ -807,27 +732,26 @@ class Inspector
                 justify-content: space-between; 
                 gap: 16px;
                 margin-bottom: 16px;
-            "> 
+            ">
                 <div style="
                     flex: 1;
                     background:#f0f0f1; 
                     padding:16px; 
                     border:1px solid #dcdcde;
-                "> 
+                ">
                     <ul style="
                         list-style:none;
                         margin: 0;
                     ">
                         <?php foreach ($report as $test => $status) : ?>
-                            <li 
+                            <li
                                 style="
                                     display: block;
                                     padding-bottom: 5px;
                                     border: solid #dcdcde;
                                     border-width: 0 0 1px 0;
                                     margin-bottom: 5px;
-                                "
-                            >
+                                ">
                                 <strong><?php echo esc_html($test); ?>:</strong>
                                 <span style="float: right;"><?php echo esc_html($status); ?></span>
                             </li>
@@ -839,7 +763,7 @@ class Inspector
                     background:#f0f0f1; 
                     padding:16px; 
                     border:1px solid #dcdcde;
-                "> 
+                ">
                     <ul style="
                         list-style:none;
                         margin: 0;
@@ -850,37 +774,34 @@ class Inspector
                                 border: solid #dcdcde;
                                 border-width: 0 0 1px 0;
                                 margin-bottom: 5px;
-                            ">                                
-                                <div 
+                            ">
+                                <div
                                     style="
                                         padding-bottom: 5px;
                                         border: dotted #dcdcde;
                                         border-width: 0 0 1px 0;
                                         margin-bottom: 5px;
-                                    "
-                                >   
+                                    ">
                                     <strong>Name:</strong>
                                     <span style="float: right;"><?php echo $forge['name']; ?></span>
-                                </div>                        
-                                <div 
+                                </div>
+                                <div
                                     style="
                                         padding-bottom: 5px;
                                         border: dotted #dcdcde;
                                         border-width: 0 0 1px 0;
                                         margin-bottom: 5px;
-                                    "
-                                >   
+                                    ">
                                     <strong>Description:</strong>
                                     <span style="float: right;"><?php echo $forge['description']; ?></span>
-                                </div>                          
-                                <div 
+                                </div>
+                                <div
                                     style="
                                         padding-bottom: 5px;
                                         border: dotted #dcdcde;
                                         border-width: 0 0 1px 0;
                                         margin-bottom: 5px;
-                                    "
-                                >   
+                                    ">
                                     <strong>Blocks - UI Admin - UI Frontend - API: </strong>
                                     <span style="float: right;">
                                         <?php echo $forge['has_api'] ? 'SI' : 'NO'; ?>
@@ -897,34 +818,32 @@ class Inspector
                                     <span style="float: right;">
                                         <?php echo $forge['has_blocks'] ? 'SI' : 'NO'; ?>
                                     </span>
-                                </div>                         
-                                <div 
+                                </div>
+                                <div
                                     style="
                                         padding-bottom: 5px;
                                         border: dotted #dcdcde;
                                         border-width: 0 0 1px 0;
                                         margin-bottom: 5px;
-                                    "
-                                >   
+                                    ">
                                     <strong>Blocks:</strong>
                                     <span style="float: right;">
                                         <?php echo $forge['blocks']; ?>
                                     </span>
-                                </div>                          
-                                <div 
+                                </div>
+                                <div
                                     style="
                                         padding-bottom: 5px;
-                                    "
-                                >   
+                                    ">
                                     <strong>Endpoints:</strong>
                                     <span style="float: right;">
                                         <?php echo $forge['endpoints']; ?>
                                     </span>
-                                </div> 
+                                </div>
                             </li>
                         <?php endforeach; ?>
                     </ul>
-                </div>  
+                </div>
             </div>
             <div style="
                 text-align: right;
@@ -937,7 +856,7 @@ class Inspector
                 </a>
             </div>
         </div>
-        <?php
+<?php
     }
 
     /**
@@ -945,12 +864,12 @@ class Inspector
      */
     public function add_action_link(array $links): array
     {
-        
+
         $heart  = Heart::get_instance();
-        
+
         // Usamos el Master Nonce para construir la URL manualmente
         $token = $heart->get_token();
-        
+
         $url   = admin_url('?test_forge=1&_wpnonce=' . $token);
 
         $link = sprintf(
@@ -979,11 +898,11 @@ namespace Poeticsoft\Heart\Admin;
 use Poeticsoft\Heart\Main as Heart;
 use Poeticsoft\Heart\Admin\Dashboard\Main as Dashboard;
 use Poeticsoft\Heart\Admin\Metabox\Main as Metabox;
-    
+
 class Main
 {
     // -------------------------------------------------------------------------------
-    
+
     public $heart;
     public $dashboard;
     public $metabox;
@@ -991,19 +910,19 @@ class Main
     private ?string $token = null;
 
     // -------------------------------------------------------------------------------
-    
+
     public function __construct(Heart $heart)
     {
         $this->heart = $heart;
-        
+
         $this->dashboard = new Dashboard($this);
         $this->metabox = new Metabox($this);
-        
+
         if (!$this->create_menu) {
-            
+
             return;
         }
-        
+
         add_action(
             'admin_menu',
             [
@@ -1012,12 +931,12 @@ class Main
             ]
         );
     }
-    
+
     // -------------------------------------------------------------------------------
-    
+
     public function create_admin_menu()
     {
-        
+
         add_menu_page(
             'Poeticsoft Heart',
             'Poeticsoft Heart',
@@ -1028,23 +947,23 @@ class Main
             2
         );
     }
-    
+
     public function render_settings()
     {
-                            
+
         echo '<div class="wrap">
         <h1>Poeticsoft Heart Settings List</h1>';
         settings_fields('poeticsoft_heart');
         do_settings_sections('poeticsoft_heart');
         echo '</div>';
     }
-    
+
     // -------------------------------------------------------------------------------
-    
+
     public function get_token()
     {
         if (null === $this->token) {
-            
+
             $this->token = wp_create_nonce('wp_rest');
         }
 
@@ -1077,26 +996,26 @@ class Main
     {
         $this->admin = $admin;
         $this->heart = $admin->heart;
-        
+
         add_action(
             'add_metaboxes',
             [$this, 'add_metaboxes']
         );
     }
-    
+
     private function add_metaboxes()
     {
-                
+
         $forges = $this->heart->forge->get_forges();
         foreach ($forges as $forge_id => $forge) {
-            
+
             if ($forge->get_has_ui_metaboxes()) {
-                
+
                 $forge_metabox = $forge->get_metabox();
                 $forge_metaboxes = $forge_metabox->get_metaboxes();
-                
+
                 foreach ($forge_metaboxes as $forge_metabox) {
-                                            
+
                     add_metabox(
                         $forge_metabox->id,
                         $forge_metabox->title,
@@ -1144,15 +1063,15 @@ class Updater
     //     }
 
     //     try {
-            
+
     //         $updateChecker = PucFactory::buildUpdateChecker(
     //             $server_url,
     //             $file,
     //             $slug
     //         );
-            
+
     //         \Poeticsoft\log("Sistema de actualizaciones activo: {$slug}", 'INFO', 'UPDATES');
-            
+
     //     } catch (\Exception $e) {
     //         \Poeticsoft\log(
     //             "Fallo al iniciar updates para {$slug}: " . $e->getMessage(),
@@ -1601,51 +1520,51 @@ class Blocks
     {
         $this->ui = $ui;
         $this->heart = $ui->heart;
-        
+
         $this->register_common();
         $this->register_blocks();
     }
-    
+
     private function register_common()
     {
 
         add_action(
             'enqueue_block_assets',
             function () {
-                
+
                 wp_enqueue_style('dashicons');
             }
         );
     }
-      
+
     private function register_blocks()
     {
 
         add_action(
             'init',
             function () {
-                    
+
                 add_filter(
                     'block_categories_all',
                     function (
                         $categories,
                         $post
                     ) {
-                
+
                         $forges = $this->heart->forge->get_forges();
                         foreach ($forges as $forge_id => $forge) {
-                        
+
                             if ($forge->get_has_ui_blocks()) {
-                            
+
                                 $forge_name = $forge->get_name();
-                            
+
                                 $posticsoft_heart_category = [
                                     'slug'  => 'poeticsoft-' . $forge_id,
                                     'title' => 'Poeticsoft ' . $forge_name
                                 ];
-                                
+
                                 array_unshift($categories, $posticsoft_heart_category);
-                
+
                                 /**
                                  * DEBUG
                                  */
@@ -1660,27 +1579,27 @@ class Blocks
                     10,
                     2
                 );
-                
+
                 $forges = $this->heart->forge->get_forges();
                 foreach ($forges as $forge_id => $forge) {
-                    
+
                     if ($forge->get_has_ui_blocks()) {
-                        
+
                         $forge_path = $forge->get_plugin_path();
                         $blocks_path = $forge_path . '/block';
                         $block_names = array_diff(
                             scandir($blocks_path),
                             ['..', '.']
                         );
-                        
+
                         $this->heart->forge->get_forges();
-                       
+
                         foreach ($block_names as $key => $block_name) {
 
-                        $block_json_dir = $blocks_path . '/' . $block_name;
-                            
-                        $registered = register_block_type($block_json_dir);
-                            
+                            $block_json_dir = $blocks_path . '/' . $block_name;
+
+                            $registered = register_block_type($block_json_dir);
+
                             /**
                              * DEBUG
                              */

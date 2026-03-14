@@ -11,7 +11,7 @@ class Inspector
 
     public function __construct(Admin $admin)
     {
-        
+
         $this->admin = $admin;
         $this->heart = $admin->heart;
     }
@@ -28,11 +28,10 @@ class Inspector
         $logfile = $this->heart->get_logfile();
 
         if (empty($logfile)) {
-            
+
             $results['Log System'] = '⚠️ Ruta no definida';
-            
         } else {
-            
+
             if (file_exists($logfile)) {
                 $results['Log Status'] = is_writable($logfile) ? '✅ Escribible' : '❌ Sin permisos';
             } else {
@@ -51,7 +50,7 @@ class Inspector
      */
     public function render_diagnostic_panel(): void
     {
-        
+
         if (!current_user_can('manage_options')) {
             return;
         }
@@ -59,7 +58,7 @@ class Inspector
         $is_test_mode = (isset($_GET['test_forge']) ? sanitize_key($_GET['test_forge']) : '') === '1';
 
         if (!$is_test_mode) {
-            
+
             return;
         }
 
@@ -71,7 +70,7 @@ class Inspector
             ||
             !wp_verify_nonce($_GET['_wpnonce'], 'wp_rest')
         ) {
-            
+
             wp_die(__('Seguridad fallida: Token inválido', 'poeticsoft-heart'));
         }
 
@@ -79,19 +78,19 @@ class Inspector
         $forges = $this->heart->forge->get_forges();
         $forges = array_map(
             function ($forge) {
-                
+
                 return [
-                   'name' => $forge->get_name(),
-                   'version' => $forge->get_version(),
-                   'description' => $forge->get_description(),
-                   'plugin_path' => $forge->get_plugin_path(),
-                   'plugin_uri' => $forge->get_plugin_uri(),
-                   'has_blocks' => $forge->get_has_blocks(),
-                   'has_ui_admin' => $forge->get_has_ui_admin(),
-                   'has_ui_frontend' => $forge->get_has_ui_frontend(),
-                   'has_api' => $forge->get_has_api(),
-                   'blocks' => implode(' - ', $forge->data['blocks']),
-                   'endpoints' => isset($forge->data['endpoints']) ? implode(' - ', $forge->data['endpoints']) : ''
+                    'name' => $forge->get_name(),
+                    'version' => $forge->get_version(),
+                    'description' => $forge->get_description(),
+                    'plugin_path' => $forge->get_plugin_path(),
+                    'plugin_uri' => $forge->get_plugin_uri(),
+                    'has_blocks' => $forge->get_has_blocks(),
+                    'has_ui_admin' => $forge->get_has_ui_admin(),
+                    'has_ui_frontend' => $forge->get_has_ui_frontend(),
+                    'has_api' => $forge->get_has_api(),
+                    'blocks' => implode(' - ', $forge->data['blocks']),
+                    'endpoints' => isset($forge->data['endpoints']) ? implode(' - ', $forge->data['endpoints']) : ''
                 ];
             },
             $forges
@@ -106,27 +105,26 @@ class Inspector
                 justify-content: space-between; 
                 gap: 16px;
                 margin-bottom: 16px;
-            "> 
+            ">
                 <div style="
                     flex: 1;
                     background:#f0f0f1; 
                     padding:16px; 
                     border:1px solid #dcdcde;
-                "> 
+                ">
                     <ul style="
                         list-style:none;
                         margin: 0;
                     ">
                         <?php foreach ($report as $test => $status) : ?>
-                            <li 
+                            <li
                                 style="
                                     display: block;
                                     padding-bottom: 5px;
                                     border: solid #dcdcde;
                                     border-width: 0 0 1px 0;
                                     margin-bottom: 5px;
-                                "
-                            >
+                                ">
                                 <strong><?php echo esc_html($test); ?>:</strong>
                                 <span style="float: right;"><?php echo esc_html($status); ?></span>
                             </li>
@@ -138,7 +136,7 @@ class Inspector
                     background:#f0f0f1; 
                     padding:16px; 
                     border:1px solid #dcdcde;
-                "> 
+                ">
                     <ul style="
                         list-style:none;
                         margin: 0;
@@ -149,37 +147,34 @@ class Inspector
                                 border: solid #dcdcde;
                                 border-width: 0 0 1px 0;
                                 margin-bottom: 5px;
-                            ">                                
-                                <div 
+                            ">
+                                <div
                                     style="
                                         padding-bottom: 5px;
                                         border: dotted #dcdcde;
                                         border-width: 0 0 1px 0;
                                         margin-bottom: 5px;
-                                    "
-                                >   
+                                    ">
                                     <strong>Name:</strong>
                                     <span style="float: right;"><?php echo $forge['name']; ?></span>
-                                </div>                        
-                                <div 
+                                </div>
+                                <div
                                     style="
                                         padding-bottom: 5px;
                                         border: dotted #dcdcde;
                                         border-width: 0 0 1px 0;
                                         margin-bottom: 5px;
-                                    "
-                                >   
+                                    ">
                                     <strong>Description:</strong>
                                     <span style="float: right;"><?php echo $forge['description']; ?></span>
-                                </div>                          
-                                <div 
+                                </div>
+                                <div
                                     style="
                                         padding-bottom: 5px;
                                         border: dotted #dcdcde;
                                         border-width: 0 0 1px 0;
                                         margin-bottom: 5px;
-                                    "
-                                >   
+                                    ">
                                     <strong>Blocks - UI Admin - UI Frontend - API: </strong>
                                     <span style="float: right;">
                                         <?php echo $forge['has_api'] ? 'SI' : 'NO'; ?>
@@ -196,34 +191,32 @@ class Inspector
                                     <span style="float: right;">
                                         <?php echo $forge['has_blocks'] ? 'SI' : 'NO'; ?>
                                     </span>
-                                </div>                         
-                                <div 
+                                </div>
+                                <div
                                     style="
                                         padding-bottom: 5px;
                                         border: dotted #dcdcde;
                                         border-width: 0 0 1px 0;
                                         margin-bottom: 5px;
-                                    "
-                                >   
+                                    ">
                                     <strong>Blocks:</strong>
                                     <span style="float: right;">
                                         <?php echo $forge['blocks']; ?>
                                     </span>
-                                </div>                          
-                                <div 
+                                </div>
+                                <div
                                     style="
                                         padding-bottom: 5px;
-                                    "
-                                >   
+                                    ">
                                     <strong>Endpoints:</strong>
                                     <span style="float: right;">
                                         <?php echo $forge['endpoints']; ?>
                                     </span>
-                                </div> 
+                                </div>
                             </li>
                         <?php endforeach; ?>
                     </ul>
-                </div>  
+                </div>
             </div>
             <div style="
                 text-align: right;
@@ -236,7 +229,7 @@ class Inspector
                 </a>
             </div>
         </div>
-        <?php
+<?php
     }
 
     /**
@@ -244,12 +237,12 @@ class Inspector
      */
     public function add_action_link(array $links): array
     {
-        
+
         $heart  = Heart::get_instance();
-        
+
         // Usamos el Master Nonce para construir la URL manualmente
         $token = $heart->get_token();
-        
+
         $url   = admin_url('?test_forge=1&_wpnonce=' . $token);
 
         $link = sprintf(

@@ -1,12 +1,12 @@
 <?php
 
-namespace Poeticsoft\Heart\Forge;
+namespace Poeticsoft\Heart\Template;
 
-abstract class BlockControlTemplate
+abstract class BlockControl
 {
     protected $forge;
     protected $block_control;
-    
+
     public $block_name;
     public $block_attributes;
 
@@ -14,10 +14,10 @@ abstract class BlockControlTemplate
     {
         $this->forge = $forge;
         $this->block_control = $parent;
-        
+
         $this->block_name = $this->get_block_name();
         $this->block_attributes = $this->get_block_attributes();
-        
+
         $this->init();
     }
 

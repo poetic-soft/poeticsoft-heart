@@ -6,19 +6,22 @@ namespace Poeticsoft\Heart\Admin\Dashboard;
 
 use Poeticsoft\Heart\Main as Heart;
 use Poeticsoft\Heart\Admin\Main as Admin;
-use Poeticsoft\Heart\Admin\Dashboard\Base;
+use Poeticsoft\Heart\Admin\Dashboard\AIAgent\Main as AIAgent;
 
 class Main
 {
     public $admin;
+
+    private $heart;
     private $dashboards;
 
     public function __construct(Admin $admin)
     {
         $this->admin = $admin;
+        $this->heart = $this->admin->heart;
 
         $this->dashboards = [
-            new Base($this, $this->admin->heart)
+            new AIAgent($this, $this->heart)
         ];
 
         add_action(
@@ -63,24 +66,15 @@ class Main
     public function dashboard_setup()
     {
 
-        $this->add_dashboard_widgets();
-
-        $this->add_forges_dashboard_widgets();
-    }
-
-    // -------------------------------------------------------------------------------
-
-    public function add_dashboard_widgets()
-    {
-
         foreach ($this->dashboards as $dashboard) {
 
-            $this->add_dashboard_widget($dashboard);
-        }
-    }
+            $dashboard_widgets = $dashboard->get_dashboard_widgets();
 
-    public function add_forges_dashboard_widgets()
-    {
+            foreach ($dashboard_widgets as $dashboard) {
+
+                $this->add_dashboard_widget($dashboard);
+            }
+        }
 
         $forges = $this->admin->heart->forge->get_forges();
 
@@ -121,10 +115,14 @@ class Main
 
     public function admin_init()
     {
-
         foreach ($this->dashboards as $dashboard) {
 
-            $this->create_section($dashboard);
+            $dashboard_widgets = $dashboard->get_dashboard_widgets();
+
+            foreach ($dashboard_widgets as $dashboard) {
+
+                $this->create_section($dashboard);
+            }
         }
 
         $forges = $this->admin->heart->forge->get_forges();
