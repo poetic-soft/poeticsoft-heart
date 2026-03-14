@@ -22,26 +22,6 @@ class Main
         $this->endpoints = new Endpoints($this);
         $this->auth = new Auth($this);
     }
-
-    public function init()
-    {
-        
-        add_action(
-            'rest_api_init',
-            [
-                $this,
-                'register_all_forge_endpoints'
-            ]
-        );
-        
-        add_filter(
-            'rest_authentication_errors',
-            [
-                $this,
-                'check_rest_authentication'
-            ]
-        );
-    }
     
     public function send_response(
         $data,

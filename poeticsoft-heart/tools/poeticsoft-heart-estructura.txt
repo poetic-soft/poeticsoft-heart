@@ -1,6 +1,6 @@
 ========================================
 ESTRUCTURA DEL PROYECTO: POETICSOFT-HEART
-Generado el: 2026-03-09 02:15:40
+Generado el: 2026-03-14 12:00:57
 ========================================
 
 ├── class
@@ -17,6 +17,8 @@ Generado el: 2026-03-09 02:15:40
 │       │   │   └── Main.php
 │       │   ├── Inspector.php
 │       │   ├── Main.php
+│       │   ├── Metabox
+│       │   │   └── Main.php
 │       │   └── Updater.php
 │       ├── Forge
 │       │   ├── BlockControlTemplate.php
@@ -28,8 +30,7 @@ Generado el: 2026-03-09 02:15:40
 │           ├── Blocks.php
 │           ├── CoreBlocks.php
 │           ├── Enqueue.php
-│           ├── Main.php
-│           └── MetaBoxes.php
+│           └── Main.php
 ├── composer.json
 ├── poeticsoft-heart.php
 └── uninstall.php

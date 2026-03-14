@@ -36,7 +36,7 @@ interface ForgeInterface
     
     public function get_has_ui_core_configs();
     
-    public function get_has_ui_meta_boxes();
+    public function get_has_ui_metaboxes();
     
     public function get_has_api();
     

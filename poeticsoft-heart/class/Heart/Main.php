@@ -26,7 +26,6 @@ class Main
     private readonly string $path;
     private readonly string $url;
     private readonly string $basename;
-    private readonly string $log_file;
     
     // -------------------------------------------------------------------------------
     
@@ -53,7 +52,6 @@ class Main
         
         $id = 'poeticsoft-heart';
         $plugin_file = WP_PLUGIN_DIR . '/' . $id . '/' . $id . '.php';
-        $log_file = WP_CONTENT_DIR . '/' . $id . '.log';
         
         $this->id = $id;
         $this->version = '0.0.0';
@@ -61,7 +59,6 @@ class Main
         $this->basename = plugin_basename($plugin_file);
         $this->path = plugin_dir_path($plugin_file);
         $this->url = plugin_dir_url($plugin_file);
-        $this->log_file = $log_file;
         
         $this->admin = new Admin($this);
         $this->api = new API($this);
@@ -101,11 +98,6 @@ class Main
         return $this->url;
     }
 
-    public function get_log_file(): string
-    {
-        return $this->log_file;
-    }
-
     // -------------------------------------------------------------------------------
     
     public static function activate(): void
@@ -122,38 +114,13 @@ class Main
     
     public static function uninstall(): void
     {
-        try {
-            
-            $instance = self::get_instance();
-            $log_file = $instance->get_log_file();
-
-            if (file_exists($log_file)) {
-                
-                @unlink($log_file);
-                
-                $backups = glob($log_file . '.*.bak');
-                
-                if (is_array($backups)) {
-                    
-                    foreach ($backups as $file) {
-                        
-                        @unlink($file);
-                    }
-                }
-            }
-            
-        } catch (\Exception $e) {
-            
-            // Silenciar si el motor no estaba cargado durante la desinstalación
-        }
-
         wp_cache_flush();
         do_action('poeticsoft_heart_uninstall');
     }
     
     // -------------------------------------------------------------------------------
     
-    public function log(
+    public static function log(
         $mensaje,
         string $nivel = 'INFO',
         string $forge = 'HEART'
@@ -162,6 +129,8 @@ class Main
         // if (!defined('WP_DEBUG') || !WP_DEBUG) {
         //     return false;
         // }
+        
+        $logfile = WP_CONTENT_DIR . '/poeticsoft-heart.log';
 
         $text = is_string($mensaje) ?
         $mensaje
@@ -173,7 +142,7 @@ class Main
         return (bool) error_log(
             $entrada,
             3,
-            $this->log_file
+            $logfile
         );
     }
 }

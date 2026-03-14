@@ -8,11 +8,11 @@ class Base extends DashboardTemplate
 {
     public function set_values()
     {
-                
-        $this->id = 'base';
-        $this->title = 'Base';
-        $this->description = 'Dashboard Base';
-    
+
+        $this->id = 'base-heart';
+        $this->title = 'Base heart';
+        $this->description = 'Dashboard Heart Base';
+
         $this->options = [
             [
                 'key' => 'string_a',

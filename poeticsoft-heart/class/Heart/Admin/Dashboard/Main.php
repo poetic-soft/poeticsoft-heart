@@ -4,6 +4,7 @@
 
 namespace Poeticsoft\Heart\Admin\Dashboard;
 
+use Poeticsoft\Heart\Main as Heart;
 use Poeticsoft\Heart\Admin\Main as Admin;
 use Poeticsoft\Heart\Admin\Dashboard\Base;
 
@@ -11,15 +12,15 @@ class Main
 {
     public $admin;
     private $dashboards;
-    
+
     public function __construct(Admin $admin)
     {
         $this->admin = $admin;
-        
+
         $this->dashboards = [
             new Base($this, $this->admin->heart)
         ];
-        
+
         add_action(
             'wp_dashboard_setup',
             [
@@ -27,7 +28,7 @@ class Main
                 'dashboard_setup'
             ]
         );
-        
+
         add_action(
             'admin_init',
             [
@@ -36,72 +37,72 @@ class Main
             ]
         );
     }
-    
+
     // -------------------------------------------------------------------------------
-    
+
     public function get_full_id($dashboard)
     {
         return str_replace(
             '-',
             '_',
             $this->admin->heart->get_id() .
-            (
-                
-                $dashboard->forge ?
-                '_' . $dashboard->forge->get_id()
-                :
-                ''
-            ) .
-            '_' .
-            $dashboard->id
+                (
+
+                    $dashboard->forge ?
+                    '_' . $dashboard->forge->get_id()
+                    :
+                    ''
+                ) .
+                '_' .
+                $dashboard->id
         );
     }
-    
+
     // -------------------------------------------------------------------------------
-    
+
     public function dashboard_setup()
     {
-                
+
         $this->add_dashboard_widgets();
-        
+
         $this->add_forges_dashboard_widgets();
     }
-    
+
     // -------------------------------------------------------------------------------
-    
+
     public function add_dashboard_widgets()
     {
-        
+
         foreach ($this->dashboards as $dashboard) {
-            
+
             $this->add_dashboard_widget($dashboard);
         }
     }
-    
+
     public function add_forges_dashboard_widgets()
     {
-        
+
         $forges = $this->admin->heart->forge->get_forges();
-        
+
         foreach ($forges as $forge) {
-            
+
             if ($forge->get_has_dashboard_widgets()) {
-                
+
                 $dashboards = $forge->dashboard->get_dashboard_widgets();
-                
+
                 foreach ($dashboards as $dashboard) {
-                    
+
                     $this->add_dashboard_widget($dashboard);
                 }
             }
         }
     }
-    
+
     public function add_dashboard_widget($dashboard)
     {
-        
+
         $full_id = $this->get_full_id($dashboard);
-        
+
         wp_add_dashboard_widget(
             $full_id,
             $dashboard->title,
@@ -115,72 +116,72 @@ class Main
             $dashboard->priority
         );
     }
-    
+
     // -------------------------------------------------------------------------------
-    
+
     public function admin_init()
     {
-                
+
         foreach ($this->dashboards as $dashboard) {
-        
+
             $this->create_section($dashboard);
         }
-        
+
         $forges = $this->admin->heart->forge->get_forges();
-        
+
         foreach ($forges as $forge) {
-            
+
             if ($forge->get_has_dashboard_widgets()) {
-                
+
                 $dashboards = $forge->dashboard->get_dashboard_widgets();
-                
+
                 foreach ($dashboards as $dashboard) {
-                    
+
                     $this->create_section($dashboard);
                 }
             }
         }
     }
-    
+
     // -------------------------------------------------------------------------------
-    
+
     public function create_section($dashboard)
     {
-        
+
         $full_id = $this->get_full_id($dashboard);
-        
+
         add_settings_section(
             $full_id,
             $dashboard->title,
             function () use ($dashboard) {
-                
+
                 echo $dashboard->description;
             },
             'poeticsoft_heart'
         );
-                
+
         foreach ($dashboard->options as $option) {
-        
+
             $this->create_option(
                 $option,
                 $full_id
             );
         }
     }
-    
+
     // -------------------------------------------------------------------------------
-    
+
     public function create_option($option, $full_id)
     {
-        
+
         $option_name = $full_id . '_' . $option['key'];
-        
+
         $admin_option = get_option($option_name);
         if (!$admin_option) {
-            
+
             update_option($option_name, $option['value']);
         }
-        
+
         register_setting(
             $full_id,
             $option_name,
@@ -190,32 +191,32 @@ class Main
                 'label' => $option['title'],
                 'description' => $option['description'],
                 'sanitize_callback' => function ($value) {
-                    
+
                     return $value;
                 },
                 'show_in_rest' => true,
                 'default' => $option['value']
             ]
         );
-        
+
         add_settings_field(
             $option_name,
             '<label for="' . $option_name . '">' .
                 $option['title'] .
-            '</label>',
+                '</label>',
             function () use ($option_name, $option) {
-                
+
                 $value = get_option(
                     $option_name,
                     $option['value']
                 );
-                
+
                 echo '<div class="Option">
                     <span class="label">' .
-                        $option['title'] .
+                    $option['title'] .
                     '</span>
                     <span class="Value">' .
-                        $value .
+                    $value .
                     '</span>
                 </option>';
             },

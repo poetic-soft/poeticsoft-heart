@@ -4,6 +4,7 @@ namespace Poeticsoft\Heart\Admin;
 
 use Poeticsoft\Heart\Main as Heart;
 use Poeticsoft\Heart\Admin\Dashboard\Main as Dashboard;
+use Poeticsoft\Heart\Admin\Metabox\Main as Metabox;
     
 class Main
 {
@@ -11,6 +12,8 @@ class Main
     
     public $heart;
     public $dashboard;
+    public $metabox;
+    private $create_menu = false;
     private ?string $token = null;
 
     // -------------------------------------------------------------------------------
@@ -20,6 +23,12 @@ class Main
         $this->heart = $heart;
         
         $this->dashboard = new Dashboard($this);
+        $this->metabox = new Metabox($this);
+        
+        if (!$this->create_menu) {
+            
+            return;
+        }
         
         add_action(
             'admin_menu',

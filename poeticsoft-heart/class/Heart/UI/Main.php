@@ -6,7 +6,6 @@ use Poeticsoft\Heart\Main as Heart;
 use Poeticsoft\Heart\UI\Blocks;
 use Poeticsoft\Heart\UI\CoreBlocks;
 use Poeticsoft\Heart\UI\Enqueue;
-use Poeticsoft\Heart\UI\MetaBoxes;
 
 class Main
 {
@@ -14,7 +13,7 @@ class Main
     public $blocks;
     public $core_blocks;
     public $enqueue;
-    public $meta_boxes;
+    public $metaboxes;
 
     public function __construct(Heart $heart)
     {
@@ -24,7 +23,6 @@ class Main
         $this->blocks = new Blocks($this);
         $this->core_blocks = new CoreBlocks($this);
         $this->enqueue = new Enqueue($this);
-        $this->meta_boxes = new MetaBoxes($this);
         
         $this->init();
     }

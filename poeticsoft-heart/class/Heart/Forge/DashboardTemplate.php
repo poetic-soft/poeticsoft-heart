@@ -7,7 +7,7 @@ abstract class DashboardTemplate
     public $dashboard;
     public $heart;
     public $forge;
-    
+
     public $id;
     public $title;
     public $description;
@@ -21,45 +21,53 @@ abstract class DashboardTemplate
         $this->dashboard = $parent;
         $this->heart = $heart;
         $this->forge = $forge;
-        
+
         $this->set_values();
     }
 
     abstract public function set_values();
-    
+
     public function content($uno, $args)
     {
-        
+
         $full_id = str_replace(
             '-',
             '_',
             $this->heart->get_id() .
-            (
-                
-                $this->forge ?
-                '_' . $this->forge->get_id()
-                :
-                ''
-            ) .
-            '_' .
-            $this->id
+                (
+
+                    $this->forge ?
+                    '_' . $this->forge->get_id()
+                    :
+                    ''
+                ) .
+                '_' .
+                $this->id
         );
-        
+
         $options = array_map(
             function ($option) use ($full_id) {
-                
+
                 $option['option_name'] = $full_id . '_' . $option['key'];
-                
+
                 return $option;
             },
             $this->options
         );
-        
-        echo '<div class="DashboardWidgetContent">
-            <script>
-                const 
-                json_encode($options, JSON_PRETTY_PRINT) .
-            </script>
+
+        echo '<div class="DashboardWidget ' . $this->id . '">
+            <div 
+                id="' . $full_id . '"
+                class="Portal"
+            >' .
+            $this->description . '. Cargando editor...' .
+            '</div>
+            <script
+                type="application/JSON"
+                class="data" 
+            >' .
+            json_encode($options, JSON_PRETTY_PRINT) .
+            '</script>
         </div>';
     }
 }
