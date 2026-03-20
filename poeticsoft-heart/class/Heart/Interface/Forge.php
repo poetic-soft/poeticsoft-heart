@@ -18,7 +18,7 @@ interface Forge
 
     public function get_plugin_path();
 
-    public function get_plugin_uri();
+    public function get_plugin_url();
 
     // -------------------------------------------------------------------------------
 

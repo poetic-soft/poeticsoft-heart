@@ -84,7 +84,7 @@ class Inspector
                     'version' => $forge->get_version(),
                     'description' => $forge->get_description(),
                     'plugin_path' => $forge->get_plugin_path(),
-                    'plugin_uri' => $forge->get_plugin_uri(),
+                    'plugin_url' => $forge->get_plugin_url(),
                     'has_blocks' => $forge->get_has_blocks(),
                     'has_ui_admin' => $forge->get_has_ui_admin(),
                     'has_ui_frontend' => $forge->get_has_ui_frontend(),

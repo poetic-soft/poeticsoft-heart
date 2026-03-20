@@ -10,10 +10,10 @@ abstract class BlockControl
     public $block_name;
     public $block_attributes;
 
-    public function __construct($forge, $parent)
+    public function __construct($forge, $block_control)
     {
         $this->forge = $forge;
-        $this->block_control = $parent;
+        $this->block_control = $block_control;
 
         $this->block_name = $this->get_block_name();
         $this->block_attributes = $this->get_block_attributes();

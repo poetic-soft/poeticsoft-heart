@@ -1,18 +1,26 @@
 ========================================
 ESTRUCTURA DEL PROYECTO: POETICSOFT-HEART
-Generado el: 2026-03-14 12:15:21
+Generado el: 2026-03-16 22:31:00
 ========================================
 
 ├── class
 │   └── Heart
+│       ├── AIAgent
+│       │   ├── Gemini.php
+│       │   └── Main.php
 │       ├── API
 │       │   ├── Auth.php
 │       │   ├── Endpoints.php
-│       │   ├── ForgeAPI.php
+│       │   ├── Local
+│       │   │   ├── Main.php
+│       │   │   └── Options.php
 │       │   ├── Main.php
 │       │   └── WhiteList.php
 │       ├── Admin
 │       │   ├── Dashboard
+│       │   │   ├── AIAgent
+│       │   │   │   ├── Gemini.php
+│       │   │   │   └── Main.php
 │       │   │   └── Main.php
 │       │   ├── Inspector.php
 │       │   ├── Main.php
@@ -20,11 +28,15 @@ Generado el: 2026-03-14 12:15:21
 │       │   │   └── Main.php
 │       │   └── Updater.php
 │       ├── Forge
-│       │   ├── BlockControlTemplate.php
-│       │   ├── DashboardTemplate.php
-│       │   ├── ForgeInterface.php
 │       │   └── Main.php
+│       ├── Interface
+│       │   ├── AI.php
+│       │   └── Forge.php
 │       ├── Main.php
+│       ├── Template
+│       │   ├── API.php
+│       │   ├── BlockControl.php
+│       │   └── Dashboard.php
 │       └── UI
 │           ├── Blocks.php
 │           ├── CoreBlocks.php
@@ -32,4 +44,10 @@ Generado el: 2026-03-14 12:15:21
 │           └── Main.php
 ├── composer.json
 ├── poeticsoft-heart.php
+├── ui
+│   └── admin
+│       ├── main.css
+│       ├── main.css.map
+│       ├── main.js
+│       └── main.js.map
 └── uninstall.php

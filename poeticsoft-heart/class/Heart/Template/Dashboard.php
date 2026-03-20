@@ -16,9 +16,9 @@ abstract class Dashboard
     public $priority = 'core'; // 'high', 'core', 'default', or 'low'. Default 'core'.
     public $options;
 
-    public function __construct($parent, $heart, $forge = null)
+    public function __construct($dashboard, $heart, $forge = null)
     {
-        $this->dashboard = $parent;
+        $this->dashboard = $dashboard;
         $this->heart = $heart;
         $this->forge = $forge;
 
@@ -52,14 +52,11 @@ abstract class Dashboard
 
                 return $option;
             },
-            $this->options
+            $this->options ? $this->options : []
         );
 
-        echo '<div class="DashboardWidget ' . $this->id . '">
-            <div 
-                id="' . $full_id . '"
-                class="Portal"
-            >' .
+        echo '<div class="DashboardWidget ' . $full_id . '">
+            <div class="Portal">' .
             $this->description . '. Cargando editor...' .
             '</div>
             <script

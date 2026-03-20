@@ -15,7 +15,7 @@ class Gemini extends DashboardTemplate
 
         $this->options = [
             [
-                'key' => 'gemini_url',
+                'key' => 'url',
                 'field_type' => 'string',
                 'title' => 'Url de acceso a GL',
                 'description' => 'Url de acceso a la api de Google AI Studio',
@@ -23,7 +23,7 @@ class Gemini extends DashboardTemplate
                 'type' => 'text'
             ],
             [
-                'key' => 'gemini_key',
+                'key' => 'key',
                 'field_type' => 'string',
                 'title' => 'Gemini API Key',
                 'description' => 'Api Key para la comunicacion con Google AI Studio',

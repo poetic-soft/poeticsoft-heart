@@ -32,28 +32,28 @@ class Auth
             return $result;
         }
 
-        $request_uri = sanitize_text_field(wp_unslash($_SERVER['REQUEST_URI']));
+        $request_url = sanitize_text_field(wp_unslash($_SERVER['REQUEST_URI']));
 
-        wp_validate_auth_cookie();
+        // wp_validate_auth_cookie();
 
-        if ($this->is_admin_user()) {
+        if (current_user_can('manage_options')) {
+
+            return null;
+        };
+
+        $pattern = $this->api->whitelist->get_compiled('public');
+
+        if (preg_match($pattern, $request_url)) {
 
             return null;
         }
 
-        $pattern = $this->api->white_list_compiled['public'];
-
-        if (preg_match($pattern, $request_uri)) {
-
-            return null;
-        }
-
-        $pattern = $this->api->white_list_compiled['logged'];
+        $pattern = $this->api->whitelist->get_compiled('logged');
 
         if (
             is_user_logged_in()
             &&
-            preg_match($pattern, $request_uri)
+            preg_match($pattern, $request_url)
         ) {
 
             return null;
@@ -61,7 +61,7 @@ class Auth
 
         $message = __('REST API restricted access. Needs authentication.', 'poeticsoft-heart');
 
-        $response = $this->format_response_data(
+        $response = $this->api->format_response_data(
             $message,
             401,
             false
@@ -71,15 +71,6 @@ class Auth
             'rest_forbidden',
             $message,
             $response
-        );
-    }
-
-    private function is_admin_user()
-    {
-
-        return in_array(
-            'administrator',
-            wp_get_current_user()->roles
         );
     }
 }

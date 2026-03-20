@@ -2,15 +2,19 @@
 
 namespace Poeticsoft\Heart\API;
 
+use WP_REST_Response;
+use DateTime;
+use DateTimeZone;
 use Poeticsoft\Heart\Main as Heart;
 use Poeticsoft\Heart\API\WhiteList;
-use Poeticsoft\Heart\API\Endpoints;
+use Poeticsoft\Heart\API\Local\Main as Local;
 use Poeticsoft\Heart\API\Auth;
 
 class Main
 {
     public $heart;
-    public $white_list;
+    public $local;
+    public $whitelist;
     public $endpoints;
     public $auth;
 
@@ -18,16 +22,19 @@ class Main
     {
 
         $this->heart = $heart;
-        $this->white_list = new WhiteList($this);
-        $this->endpoints = new Endpoints($this);
+
+        $this->local = new Local($this);
+
         $this->auth = new Auth($this);
+        $this->endpoints = new Endpoints($this);
+        $this->whitelist = new WhiteList($this);
     }
 
     public function send_response(
         $data,
         int $status = 200,
         bool $success = true
-    ): \WP_REST_Response {
+    ): WP_REST_Response {
 
         $response = [
             'code' => '',
@@ -39,17 +46,17 @@ class Main
             )
         ];
 
-        return new \WP_REST_Response($response, $status);
+        return new WP_REST_Response($response, $status);
     }
 
-    private function format_response_data(
+    public function format_response_data(
         $data,
         int $status = 200,
         bool $success = true
     ) {
 
-        $fecha = new \DateTime();
-        $fecha->setTimezone(new \DateTimeZone('Europe/Madrid'));
+        $fecha = new DateTime();
+        $fecha->setTimezone(new DateTimeZone('Europe/Madrid'));
         $fecha = $fecha->format('d/m/Y H:i:s');
 
         return [

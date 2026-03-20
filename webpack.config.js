@@ -15,10 +15,6 @@ module.exports = (env) => {
     const watch = params[3] || 'si'; // si | no
     const cssfilename = '[name].css';
 
-    let output;
-    let entry;
-    let externals;
-
     const wpblockexternals = {
         '@wordpress/element': 'wp.element',
         '@wordpress/i18n': 'wp.i18n',
@@ -31,25 +27,16 @@ module.exports = (env) => {
         'react-dom': 'wp.element'
     };
 
+    let externals;
+
     switch (type) {
+        case 'common':
         case 'admin':
-            output = path.resolve(__dirname, pluginname + '/ui/' + type);
-
-            entry = {
-                main: './src/' + type + '/main.js'
-            };
-
             externals = wpblockexternals;
 
             break;
 
         case 'frontend':
-            output = path.resolve(__dirname, pluginname + '/ui/' + type);
-
-            entry = {
-                main: './src/' + type + '/main.js'
-            };
-
             externals = wpcompexternals;
 
             break;
@@ -57,6 +44,11 @@ module.exports = (env) => {
         default:
             break;
     }
+
+    const output = path.resolve(__dirname, pluginname + '/ui/' + type);
+    let entry = {
+        main: './src/' + type + '/main.js'
+    };
 
     console.log('--------------------------');
     console.log('context: ' + path.resolve(__dirname));
@@ -154,25 +146,15 @@ module.exports = (env) => {
             alias: {
                 assets: path.resolve(destdir + '/assets'),
                 block: path.join(__dirname, pluginname, 'block'),
-                commonadminjs: path.join(
-                    __dirname,
-                    'src',
-                    'admin',
-                    'js',
-                    'common'
-                ),
-                commonadminscss: path.join(
-                    __dirname,
-                    'src',
-                    'admin',
-                    'scss',
-                    'common'
-                ),
-                commonscss: path.join(__dirname, 'src', 'scss')
+                common: path.join(__dirname, 'src', 'common'),
+                adminjs: path.join(__dirname, 'src', 'admin', 'js'),
+                adminscss: path.join(__dirname, 'src', 'admin', 'scss')
             }
         },
         externals: externals
     };
+
+    console.log(path.join(__dirname, 'src', 'common', 'js', 'components'));
 
     return config;
 };

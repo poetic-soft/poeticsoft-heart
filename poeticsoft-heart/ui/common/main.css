@@ -1,0 +1,41 @@
+/*!************************************************************************************************************************************************!*\
+  !*** css ./node_modules/css-loader/dist/cjs.js!./node_modules/sass-loader/dist/cjs.js??ruleSet[1].rules[1].use[2]!./src/common/scss/main.scss ***!
+  \************************************************************************************************************************************************/
+:root {
+  /* SIZES */
+  --space: 8px;
+  --s025: calc(var(--space) * 0.25);
+  --s05: calc(var(--space) * 0.5);
+  --s075: calc(var(--space) * 0.75);
+  --s: var(--space);
+  --s15: calc(var(--space) * 1.5);
+  --s2: calc(var(--space) * 2);
+  --s3: calc(var(--space) * 3);
+  --s4: calc(var(--space) * 4);
+  --s5: calc(var(--space) * 5);
+  --s6: calc(var(--space) * 6);
+  --s7: calc(var(--space) * 7);
+  --s8: calc(var(--space) * 8);
+  --s9: calc(var(--space) * 9);
+  --s10: calc(var(--space) * 10);
+  --s12: calc(var(--space) * 12);
+  --s14: calc(var(--space) * 14);
+  --s20: calc(var(--space) * 14);
+}
+
+.Metabox.route .Portal .playmotiv-page-route-wrapper .route-display {
+  padding: var(--s);
+  text-align: center;
+  border: solid 1px var(--color-borders);
+  cursor: help;
+}
+.Metabox.route .Portal .playmotiv-page-route-wrapper > .components-button {
+  width: 100%;
+  box-sizing: border-box;
+  justify-content: center;
+}
+.Metabox.route .Portal .playmotiv-page-route-wrapper .components-notice {
+  margin-top: var(--s2);
+}
+
+/*# sourceMappingURL=main.css.map*/

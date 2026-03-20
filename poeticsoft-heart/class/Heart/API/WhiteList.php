@@ -2,31 +2,71 @@
 
 namespace Poeticsoft\Heart\API;
 
+use Poeticsoft\Heart\Main as Heart;
 use Poeticsoft\Heart\API\Main as API;
 
 class WhiteList
 {
     protected $api;
     protected $heart;
-    protected $white_list;
-    protected $white_list_compiled;
+    protected $local;
+    protected $whitelist;
+    protected $whitelist_compiled;
 
     public function __construct(API $api)
     {
         $this->api = $api;
         $this->heart = $api->heart;
-        $this->white_list = [
+        $this->local = $api->local;
+        $this->whitelist = [
             'public' => [],
             'logged' => []
         ];
-        $this->white_list_compiled = [
+        $this->whitelist_compiled = [
             'public' => '',
             'logged' => ''
         ];
     }
 
+    public function get_compiled(string $type): string
+    {
+        // Si no se ha compilado, lo hacemos ahora (Lazy loading controlado)
+        if (empty($this->whitelist_compiled['public']) && empty($this->whitelist_compiled['logged'])) {
+            $this->compile_whitelists();
+        }
+
+        return $this->whitelist_compiled[$type] ?? '/^$/';
+    }
+
     public function compile_whitelists()
     {
+
+        $whitelists = $this->local->get_whitelist();
+
+        $namespace = str_replace('-', '/', $this->heart->get_id()); // TO DO Function format namespace
+
+        foreach ($whitelists as $version => $sections) {
+
+            foreach ($sections as $section => $types) {
+
+                foreach ($types as $type => $paths) {
+
+                    foreach ($paths as $path) {
+
+                        $item = '/wp-json/' .
+                            $namespace .
+                            '/' .
+                            $version .
+                            '/' .
+                            $section .
+                            '/' .
+                            $path;
+
+                        $this->whitelist[$type][] = $item;
+                    }
+                }
+            }
+        }
 
         $forges = $this->heart->forge->get_forges();
 
@@ -37,7 +77,9 @@ class WhiteList
                 $forge_api = $forge->get_api();
                 $whitelists = $forge_api->get_whitelist();
 
-                $namespace = $this->heart->get_id() . '/' . $forge->get_id();
+                $namespace = str_replace('-', '/', $this->heart->get_id()) .
+                    '/' .
+                    str_replace('-', '/', $forge->get_id());
 
                 foreach ($whitelists as $version => $sections) {
 
@@ -56,7 +98,7 @@ class WhiteList
                                     '/' .
                                     $path;
 
-                                $this->white_list[$type][] = $item;
+                                $this->whitelist[$type][] = $item;
                             }
                         }
                     }
@@ -64,11 +106,11 @@ class WhiteList
             }
         }
 
-        foreach ($this->white_list as $type => $endpoints) {
+        foreach ($this->whitelist as $type => $endpoints) {
 
             if (empty($endpoints)) {
 
-                $this->white_list_compiled[$type] = '/^$/';
+                $this->whitelist_compiled[$type] = '/^$/';
 
                 continue;
             }
@@ -78,12 +120,14 @@ class WhiteList
 
                     $quoted = str_replace('/', '\/', $endpoint);
 
-                    return str_replace('*', '.*', $quoted);
+                    $pattern = str_replace('*', '.*', $quoted);
+
+                    return $pattern . '(\?.*)?';
                 },
                 $endpoints
             );
 
-            $this->white_list_compiled[$type] = '/^(' . implode('|', $type_regex_parts) . ')$/';
+            $this->whitelist_compiled[$type] = '/^(' . implode('|', $type_regex_parts) . ')$/';
         }
     }
 }

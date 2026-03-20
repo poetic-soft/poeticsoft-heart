@@ -1,13 +1,13 @@
 {
-  "name": "Playmotiv Theme Player",
+  "name": "Poeticsoft Heart",
   "version": "0.0.0",
   "license": "GPL-2.0-or-later",
   "scripts": {
-    "blockbase": "webpack --env=block-base",
+    "common": "webpack --env=common",
     "admin": "webpack --env=admin",
     "frontend": "webpack --env=frontend",
-    "blockcontrol": "webpack --env=blockcontrol",
-    "story": "webpack --env=story"
+    "blockbase": "webpack --env=block-base",
+    "blockcontrol": "webpack --env=blockcontrol"
   },
   "dependencies": {
     "@babel/core": "^7.18.10",

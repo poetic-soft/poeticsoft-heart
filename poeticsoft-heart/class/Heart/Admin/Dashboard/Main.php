@@ -146,6 +146,17 @@ class Main
     public function create_section($dashboard)
     {
 
+        if (
+            !$dashboard->options
+            ||
+            !is_array($dashboard->options)
+            ||
+            !count($dashboard->options)
+        ) {
+
+            return;
+        }
+
         $full_id = $this->get_full_id($dashboard);
 
         add_settings_section(

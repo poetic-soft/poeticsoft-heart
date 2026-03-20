@@ -2,6 +2,7 @@
 
 namespace Poeticsoft\Heart\UI;
 
+use Poeticsoft\Heart\Main as Heart;
 use Poeticsoft\Heart\UI\Main as UI;
 
 class Enqueue
@@ -24,13 +25,17 @@ class Enqueue
 
         $id = $heart_id;
         $path = $this->heart->get_path();
-        $uri = $this->heart->get_url();
+        $url = $this->heart->get_url();
 
         if ($forge) {
 
             $id .= $forge->get_id();
             $path = $forge->get_plugin_path();
-            $uri = $forge->get_plugin_uri();
+            $url = $forge->get_plugin_url();
+        } else {
+
+            $path = $this->heart->get_path();
+            $url = $this->heart->get_url();
         }
 
         $enqueue_id = $id . '-' . $section;
@@ -43,6 +48,15 @@ class Enqueue
                 'wp-components',
                 'wp-data',
                 'wp-compose',
+                'wp-hooks',
+                'lodash'
+            ],
+            'common' => [
+                'wp-blocks',
+                'wp-block-editor',
+                'wp-element',
+                'wp-components',
+                'wp-data',
                 'wp-hooks',
                 'lodash'
             ],
@@ -65,16 +79,16 @@ class Enqueue
         /**
          * DEBUG
          */
-        // $this->heart->logging->log([
+        // Heart::log([
         //     'enqueue_id' => $enqueue_id,
-        //     'uri' => $forge_uri . '/ui/' . $section . '/main.js',
+        //     'url' => $url . '/ui/' . $section . '/main.js',
         //     'deps' => $deps[$section],
-        //     'path' => $forge_path . '/ui/' . $section . '/main.js'
+        //     'path' => $path . '/ui/' . $section . '/main.js'
         // ]);
 
         wp_enqueue_script(
             $enqueue_id,
-            $uri . '/ui/' . $section . '/main.js',
+            $url . '/ui/' . $section . '/main.js',
             $deps[$section],
             filemtime($path . '/ui/' . $section . '/main.js'),
             true
@@ -82,7 +96,7 @@ class Enqueue
 
         wp_enqueue_style(
             $enqueue_id,
-            $uri . '/ui/' . $section . '/main.css',
+            $url . '/ui/' . $section . '/main.css',
             [],
             filemtime($path . '/ui/' . $section . '/main.css'),
             'all'
@@ -96,6 +110,8 @@ class Enqueue
             'admin_enqueue_scripts',
             function () {
 
+                $this->enqueue('common');
+
                 $this->enqueue('admin');
 
                 $forges = $this->heart->forge->get_forges();
@@ -103,7 +119,7 @@ class Enqueue
 
                     if ($forge->get_has_ui_admin()) {
 
-                        $this->enqueue($forge, 'admin');
+                        $this->enqueue('admin', $forge);
                     }
 
                     if ($forge->get_has_ui_block_control()) {
@@ -117,7 +133,6 @@ class Enqueue
         add_action(
             'wp_enqueue_scripts',
             function () {
-
 
                 $this->enqueue('frontend');
 
