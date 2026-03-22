@@ -1,9 +1,8 @@
 const { dispatch } = wp.data;
-import config from 'common/js/config';
-import AIAgent from './aiagent/main';
+const { DashboardOptionsManager } = POETICSOFT_HEART.comps;
 
-dispatch(config.store_key).addPortal({
+dispatch(POETICSOFT_HEART.store_key).portalsAdd({
     selector: '.postbox .DashboardWidget.poeticsoft_heart_gemini',
     target: '.Portal',
-    comp: <AIAgent />
+    comp: <DashboardOptionsManager />
 });

@@ -1,0 +1,44 @@
+ESTRUCTURA DE: E:\trabajo\poeticsoft\forge\poeticsoft.heart\src
+.
+├── admin
+│   ├── js
+│   │   ├── main.js
+│   │   └── portals
+│   │       └── dashboards
+│   │           └── main.js
+│   └── main.js
+└── common
+    ├── js
+    │   ├── api.js
+    │   ├── components
+    │   │   ├── dashboard
+    │   │   │   ├── main.js
+    │   │   │   └── options
+    │   │   │       ├── field.js
+    │   │   │       ├── main.js
+    │   │   │       └── manager.js
+    │   │   └── main.js
+    │   ├── main.js
+    │   ├── portals
+    │   │   ├── main.js
+    │   │   └── manager.js
+    │   └── store
+    │       ├── actions
+    │       │   ├── dashboards-options.js
+    │       │   ├── main.js
+    │       │   └── portals.js
+    │       ├── main.js
+    │       ├── reducer
+    │       │   ├── dashboard.js
+    │       │   ├── main.js
+    │       │   └── portals.js
+    │       ├── resolvers
+    │       │   ├── dashboards-options.js
+    │       │   ├── main.js
+    │       │   └── portals.js
+    │       ├── selectors
+    │       │   ├── dashboards-options.js
+    │       │   ├── main.js
+    │       │   └── portals.js
+    │       └── state.js
+    └── main.js

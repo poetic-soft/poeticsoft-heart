@@ -1,0 +1,690 @@
+
+
+--- INICIO DE ARCHIVO: src\admin\js\main.js ---
+import './portals/dashboards/main';
+
+--- FIN DE ARCHIVO: src\admin\js\main.js ---
+
+
+--- INICIO DE ARCHIVO: src\admin\js\portals\dashboards\main.js ---
+const { dispatch } = wp.data;
+const { DashboardOptionsManager } = POETICSOFT_HEART.comps;
+
+dispatch(POETICSOFT_HEART.store_key).portalsAdd({
+    selector: '.postbox .DashboardWidget.poeticsoft_heart_gemini',
+    target: '.Portal',
+    comp: <DashboardOptionsManager />
+});
+
+--- FIN DE ARCHIVO: src\admin\js\portals\dashboards\main.js ---
+
+
+--- INICIO DE ARCHIVO: src\admin\main.js ---
+import './js/main';
+import './scss/main.scss';
+
+--- FIN DE ARCHIVO: src\admin\main.js ---
+
+
+--- INICIO DE ARCHIVO: src\common\js\api.js ---
+/**
+ * Servicio de API centralizado para Playmotiv
+ */
+const { apiFetch } = wp;
+
+const API_BASE = 'poeticsoft/heart';
+const IS_DEV = true; // Cambiar a false en producción
+
+export const apiClient = {
+    /**
+     * Helper para logs de desarrollo
+     */
+    _log(endpoint, response) {
+        if (!IS_DEV) return;
+        const { data } = response;
+        const meta = data?.meta;
+        console.groupCollapsed(
+            `%c API: ${endpoint}`,
+            'color: #007cba; font-weight: bold;'
+        );
+        if (meta) {
+            console.log(`Fecha API: ${meta.fecha}`);
+            console.log(`Timestamp: ${meta.timestampms}`);
+        }
+        console.log('Respuesta completa:', response);
+        console.groupEnd();
+    },
+
+    /**
+     * Request principal
+     */
+    async request(endpoint, method = 'GET', body = null) {
+        const path = `${API_BASE}/${endpoint.replace(/^\//, '')}`;
+
+        try {
+            const response = await apiFetch({
+                path: path,
+                method: method,
+                data: body
+            });
+
+            this._log(endpoint, response);
+
+            // Validamos la estructura anidada de Playmotiv
+            if (response && response.data && response.data.success) {
+                return {
+                    success: true,
+                    data: response.data.data,
+                    meta: response.data.meta,
+                    status: response.data.status
+                };
+            }
+
+            // Error controlado por la lógica de la API
+            return {
+                success: false,
+                message:
+                    response.data?.error || 'La operación no pudo completarse.',
+                status: response.data?.status || 400
+            };
+        } catch (error) {
+            // Error de infraestructura (404, 500, rest_no_route, etc)
+            console.error(`Error crítico en ${endpoint}:`, error);
+            return {
+                success: false,
+                message:
+                    error.message || 'Error de comunicación con el servidor.',
+                code: error.code || 'unknown_error'
+            };
+        }
+    },
+
+    get(endpoint, params = null) {
+        return this.request(endpoint, 'GET', params);
+    },
+
+    post(endpoint, data = null) {
+        return this.request(endpoint, 'POST', data);
+    }
+};
+
+--- FIN DE ARCHIVO: src\common\js\api.js ---
+
+
+--- INICIO DE ARCHIVO: src\common\js\components\dashboard\main.js ---
+export * from './options/main';
+
+--- FIN DE ARCHIVO: src\common\js\components\dashboard\main.js ---
+
+
+--- INICIO DE ARCHIVO: src\common\js\components\dashboard\options\field.js ---
+const { memo } = wp.element;
+const {
+    TextControl,
+    TextareaControl,
+    CheckboxControl,
+    ToggleControl,
+    SelectControl,
+    RadioControl
+} = wp.components;
+
+export const DashboardOptionsField = memo(({ option, onChange, errorMsg }) => {
+    const { type, title, description, value, option_name, options } = option;
+
+    const commonProps = {
+        label: title,
+        help: errorMsg || description,
+        value: value,
+        onChange: (val) => onChange(option_name, val),
+        className: errorMsg ? 'is-error' : ''
+    };
+
+    switch (type) {
+        case 'textarea':
+            return <TextareaControl {...commonProps} rows={8} />;
+
+        case 'checkbox':
+            return (
+                <CheckboxControl
+                    {...commonProps}
+                    checked={!!value}
+                    onChange={(val) => onChange(option_name, val)}
+                />
+            );
+
+        case 'toggle':
+            return (
+                <ToggleControl
+                    {...commonProps}
+                    checked={!!value}
+                    onChange={(val) => onChange(option_name, val)}
+                />
+            );
+
+        case 'select':
+            return <SelectControl {...commonProps} options={options || []} />;
+
+        case 'radio':
+            return (
+                <RadioControl
+                    {...commonProps}
+                    options={options || []}
+                    onChange={(val) => onChange(option_name, val)}
+                />
+            );
+
+        case 'email':
+        case 'number':
+        case 'tel':
+        case 'url':
+            return <TextControl {...commonProps} type={type} />;
+
+        case 'text':
+        default:
+            return <TextControl {...commonProps} />;
+    }
+});
+
+--- FIN DE ARCHIVO: src\common\js\components\dashboard\options\field.js ---
+
+
+--- INICIO DE ARCHIVO: src\common\js\components\dashboard\options\main.js ---
+export * from './field';
+export * from './manager';
+
+--- FIN DE ARCHIVO: src\common\js\components\dashboard\options\main.js ---
+
+
+--- INICIO DE ARCHIVO: src\common\js\components\dashboard\options\manager.js ---
+// src/common/js/components/dashboard/options/manager.js
+const { memo, useEffect, useMemo, useLayoutEffect } = wp.element;
+const { useSelect, useDispatch } = wp.data;
+import { DashboardOptionsField } from './field';
+
+export const DashboardOptionsManager = memo((props) => {
+    const { store_key } = POETICSOFT_HEART; // [cite: 72]
+    const {
+        dashboardsOptionsAdd,
+        dashboardsOptionsUpdateValue,
+        dashboardsOptionsSave
+    } = useDispatch(store_key);
+
+    // Mapeamos los option_names que pertenecen a esta instancia del widget
+    const myOptionNames = useMemo(
+        () => props.data?.map((opt) => opt.option_name) || [],
+        [props.data]
+    );
+
+    useLayoutEffect(() => {
+        if (props.data) dashboardsOptionsAdd(props.data);
+    }, [props.data]);
+
+    const { options, feedbacks, isSaving } = useSelect(
+        (select) => {
+            const store = select(store_key);
+            const state = store.dashboardsOptionsGet();
+
+            const myOptions = {};
+            const myFeedbacks = {};
+
+            // Extraemos solo las opciones que este manager debe renderizar
+            myOptionNames.forEach((name) => {
+                if (state.options[name]) {
+                    myOptions[name] = state.options[name];
+                    myFeedbacks[name] = state.feedback
+                        ? state.feedback[name]
+                        : null;
+                }
+            });
+
+            return {
+                options: myOptions,
+                feedbacks: myFeedbacks,
+                isSaving: state.isSaving
+            };
+        },
+        [myOptionNames]
+    );
+
+    const handleFieldChange = (optionName, newValue) => {
+        // 1. Actualizamos el store inmediatamente (UI fluida)
+        dashboardsOptionsUpdateValue(optionName, newValue);
+
+        // 2. Opcional: Guardar automáticamente
+        // (En producción mejor usar un debounce para no saturar la API)
+        dashboardsOptionsSave(optionName);
+    };
+
+    return (
+        <div
+            className={`dashboard-options-manager ${isSaving ? 'is-busy' : ''}`}
+        >
+            {Object.values(options).map((option) => (
+                <DashboardOptionsField
+                    key={option.option_name}
+                    option={option}
+                    onChange={(unusedKey, val) =>
+                        handleFieldChange(option.option_name, val)
+                    }
+                    errorMsg={null}
+                />
+            ))}
+            {isSaving && <span className="spinner is-active"></span>}
+        </div>
+    );
+});
+
+--- FIN DE ARCHIVO: src\common\js\components\dashboard\options\manager.js ---
+
+
+--- INICIO DE ARCHIVO: src\common\js\components\main.js ---
+export * from './dashboard/main';
+
+--- FIN DE ARCHIVO: src\common\js\components\main.js ---
+
+
+--- INICIO DE ARCHIVO: src\common\js\main.js ---
+import './store/main';
+import './portals/main';
+
+--- FIN DE ARCHIVO: src\common\js\main.js ---
+
+
+--- INICIO DE ARCHIVO: src\common\js\portals\main.js ---
+const { render } = wp.element;
+import Manager from './manager';
+
+const setup = () => {
+    const container = document.createElement('div');
+    container.id = 'poeticsoft-heart-portal-root';
+    container.style.display = 'none';
+    document.body.appendChild(container);
+
+    render(<Manager />, container);
+};
+
+if (
+    document.readyState === 'complete' ||
+    document.readyState === 'interactive'
+) {
+    setup();
+} else {
+    document.addEventListener('DOMContentLoaded', setup);
+}
+
+--- FIN DE ARCHIVO: src\common\js\portals\main.js ---
+
+
+--- INICIO DE ARCHIVO: src\common\js\portals\manager.js ---
+const { useState } = wp.element;
+const { useSelect } = wp.data;
+const { createPortal, cloneElement } = wp.element;
+
+export default () => {
+    const [portalList, setPortalList] = useState([]);
+    useSelect((select) => {
+        const detected = [];
+        const portals = select(POETICSOFT_HEART.store_key).portalsGet();
+
+        portals.forEach((portal) => {
+            const selector = portal.selector;
+            const elements = document.querySelectorAll(selector);
+            elements.forEach((el) => {
+                const target = el.querySelector(portal.target);
+                if (target) {
+                    if (!target.dataset.portalInitialized) {
+                        target.innerHTML = '';
+                        target.dataset.portalInitialized = 'true';
+                    }
+                    const id = target.id;
+                    const targetData = el.querySelector('script.data');
+                    let data = null;
+                    try {
+                        data = targetData
+                            ? JSON.parse(targetData.textContent)
+                            : null;
+                    } catch (e) {
+                        console.warn(`JSON corrupto en ${id}`);
+                    }
+
+                    detected.push({
+                        id,
+                        target,
+                        component: cloneElement(portal.comp, {
+                            data,
+                            rootElement: el,
+                            boxId: id
+                        })
+                    });
+                }
+            });
+        });
+
+        setPortalList((prevPortals) => {
+            if (prevPortals.length !== detected.length) return detected;
+            const hasChanges = detected.some(
+                (p, i) =>
+                    p.id !== prevPortals[i].id ||
+                    p.target !== prevPortals[i].target
+            );
+            return hasChanges ? detected : prevPortals;
+        });
+    }, []);
+
+    return (
+        <>{portalList.map((p) => createPortal(p.component, p.target, p.id))}</>
+    );
+};
+
+--- FIN DE ARCHIVO: src\common\js\portals\manager.js ---
+
+
+--- INICIO DE ARCHIVO: src\common\js\store\actions\dashboards-options.js ---
+export default {
+    dashboardsOptionsAdd(options) {
+        return { type: 'DASHBOARD_OPTIONS_ADD', payload: options };
+    },
+    dashboardsOptionsSetValues(values) {
+        return { type: 'DASHBOARD_OPTIONS_SET_VALUES', payload: values };
+    },
+    dashboardsOptionsUpdateValue(optionName, value) {
+        return {
+            type: 'DASHBOARD_OPTIONS_UPDATE_VALUE',
+            payload: { optionName, value }
+        };
+    },
+    dashboardsOptionsSetSaving(isSaving) {
+        return { type: 'DASHBOARD_SET_SAVING', payload: isSaving };
+    },
+    *dashboardsOptionsSave(optionName) {
+        const { api, store_key } = POETICSOFT_HEART; // [cite: 187]
+        const { select } = wp.data;
+        const option =
+            select(store_key).dashboardsOptionsGet().options[optionName];
+
+        if (!option) return;
+
+        // Estado: Guardando
+        yield {
+            type: 'DASHBOARD_OPTIONS_SET_FEEDBACK',
+            payload: { optionName, status: 'saving', message: 'Guardando...' }
+        };
+
+        try {
+            const response = yield api.apiClient.post('v1/options/set', {
+                option_name: option.option_name,
+                value: option.value
+            });
+
+            if (response.success) {
+                yield {
+                    type: 'DASHBOARD_OPTIONS_SET_FEEDBACK',
+                    payload: {
+                        optionName,
+                        status: 'success',
+                        message: 'Guardado'
+                    }
+                };
+                // Limpiar éxito tras 3 segundos
+                setTimeout(() => {
+                    wp.data
+                        .dispatch(store_key)
+                        .dashboardsOptionsClearFeedback(optionName);
+                }, 3000);
+            } else {
+                throw new Error(response.message);
+            }
+        } catch (error) {
+            yield {
+                type: 'DASHBOARD_OPTIONS_SET_FEEDBACK',
+                payload: {
+                    optionName,
+                    status: 'error',
+                    message: error.message || 'Error'
+                }
+            };
+        }
+    }
+};
+
+--- FIN DE ARCHIVO: src\common\js\store\actions\dashboards-options.js ---
+
+
+--- INICIO DE ARCHIVO: src\common\js\store\actions\main.js ---
+import portals from './portals';
+import dashboard_options from './dashboards-options';
+
+export default {
+    ...portals,
+    ...dashboard_options
+};
+
+--- FIN DE ARCHIVO: src\common\js\store\actions\main.js ---
+
+
+--- INICIO DE ARCHIVO: src\common\js\store\actions\portals.js ---
+export default {
+    portalsAdd(portal) {
+        return {
+            type: 'PORTALS_ADD',
+            payload: portal
+        };
+    }
+};
+
+--- FIN DE ARCHIVO: src\common\js\store\actions\portals.js ---
+
+
+--- INICIO DE ARCHIVO: src\common\js\store\main.js ---
+const { registerStore } = wp.data;
+import actions from './actions/main';
+import selectors from './selectors/main';
+import reducer from './reducer/main';
+import resolvers from './resolvers/main';
+
+registerStore(POETICSOFT_HEART.store_key, {
+    reducer,
+    actions,
+    selectors,
+    resolvers
+});
+
+--- FIN DE ARCHIVO: src\common\js\store\main.js ---
+
+
+--- INICIO DE ARCHIVO: src\common\js\store\reducer\dashboard.js ---
+// src/common/js/store/reducer/dashboard.js
+export default (draft, action) => {
+    switch (action.type) {
+        case 'DASHBOARD_OPTIONS_ADD':
+            action.payload.forEach((option) => {
+                if (!draft.dashboardsOptions.options[option.option_name]) {
+                    draft.dashboardsOptions.options[option.option_name] =
+                        option;
+                }
+            });
+            break;
+
+        case 'DASHBOARD_OPTIONS_SET_VALUES':
+            console.log(action.payload);
+
+            Object.entries(action.payload).forEach(([optionName, value]) => {
+                if (draft.dashboardsOptions.options[optionName]) {
+                    draft.dashboardsOptions.options[optionName].value = value;
+                }
+            });
+            break;
+
+        case 'DASHBOARD_OPTIONS_UPDATE_VALUE': {
+            const { optionName, value } = action.payload;
+            if (draft.dashboardsOptions.options[optionName]) {
+                draft.dashboardsOptions.options[optionName].value = value;
+                draft.dashboardsOptions.isDirty = true; // Marcamos que hay cambios sin guardar
+            }
+            break;
+        }
+
+        case 'DASHBOARD_SET_SAVING':
+            draft.dashboardsOptions.isSaving = action.payload;
+            break;
+
+        case 'DASHBOARD_OPTIONS_SET_FEEDBACK': {
+            const { optionName, status, message } = action.payload;
+            if (!draft.dashboardsOptions.feedback)
+                draft.dashboardsOptions.feedback = {};
+            draft.dashboardsOptions.feedback[optionName] = { status, message };
+            break;
+        }
+
+        case 'DASHBOARD_OPTIONS_CLEAR_FEEDBACK':
+            if (draft.dashboardsOptions.feedback) {
+                delete draft.dashboardsOptions.feedback[action.payload];
+            }
+            break;
+    }
+};
+
+--- FIN DE ARCHIVO: src\common\js\store\reducer\dashboard.js ---
+
+
+--- INICIO DE ARCHIVO: src\common\js\store\reducer\main.js ---
+import { produce } from 'immer';
+import defaultState from '../state';
+
+import portals from './portals';
+import dashboard from './dashboard';
+
+export default (state = defaultState, action) => {
+    return produce(state, (draft) => {
+        portals(draft, action);
+        dashboard(draft, action);
+    });
+};
+
+--- FIN DE ARCHIVO: src\common\js\store\reducer\main.js ---
+
+
+--- INICIO DE ARCHIVO: src\common\js\store\reducer\portals.js ---
+export default (draft, action) => {
+    switch (action.type) {
+        case 'PORTALS_ADD':
+            draft.portals.push(action.payload);
+            break;
+    }
+};
+
+--- FIN DE ARCHIVO: src\common\js\store\reducer\portals.js ---
+
+
+--- INICIO DE ARCHIVO: src\common\js\store\resolvers\dashboards-options.js ---
+import actions from '../actions/main';
+
+export default {
+    // WordPress inyecta los argumentos del selector aquí
+    *dashboardsOptionsGet() {
+        const { api, store_key } = POETICSOFT_HEART;
+        const { select } = wp.data;
+
+        // Accedemos al estado actual sin disparar selectores recursivos
+        const state = select(store_key).dashboardsOptionsGet();
+        const optionNames = Object.keys(state.options || {});
+
+        // Si el Manager aún no ha hecho el 'ADD', no podemos pedir nada
+        if (optionNames.length === 0) return;
+
+        try {
+            const response = yield api.apiClient.post('v1/options/get', {
+                option_names: optionNames
+            });
+
+            if (response.success) {
+                // ESTO disparará el reducer DASHBOARD_OPTIONS_SET_VALUES
+                yield actions.dashboardsOptionsSetValues(response.data);
+            }
+        } catch (e) {
+            console.error('Error en hidratación:', e);
+        }
+    }
+};
+
+--- FIN DE ARCHIVO: src\common\js\store\resolvers\dashboards-options.js ---
+
+
+--- INICIO DE ARCHIVO: src\common\js\store\resolvers\main.js ---
+import portals from './portals';
+import dashboard_options from './dashboards-options';
+
+export default {
+    ...portals,
+    ...dashboard_options
+};
+
+--- FIN DE ARCHIVO: src\common\js\store\resolvers\main.js ---
+
+
+--- INICIO DE ARCHIVO: src\common\js\store\resolvers\portals.js ---
+// const { apiClient } = POETICSOFT_HEART.api;
+import actions from 'common/js/store/actions/main';
+
+export default {};
+
+--- FIN DE ARCHIVO: src\common\js\store\resolvers\portals.js ---
+
+
+--- INICIO DE ARCHIVO: src\common\js\store\selectors\dashboards-options.js ---
+export default {
+    dashboardsOptionsGet(state) {
+        return state.dashboardsOptions;
+    }
+};
+
+--- FIN DE ARCHIVO: src\common\js\store\selectors\dashboards-options.js ---
+
+
+--- INICIO DE ARCHIVO: src\common\js\store\selectors\main.js ---
+import portals from './portals';
+import dashboard_options from './dashboards-options';
+
+export default {
+    ...portals,
+    ...dashboard_options
+};
+
+--- FIN DE ARCHIVO: src\common\js\store\selectors\main.js ---
+
+
+--- INICIO DE ARCHIVO: src\common\js\store\selectors\portals.js ---
+export default {
+    portalsGet(state) {
+        return state.portals;
+    }
+};
+
+--- FIN DE ARCHIVO: src\common\js\store\selectors\portals.js ---
+
+
+--- INICIO DE ARCHIVO: src\common\js\store\state.js ---
+export default {
+    portals: [],
+    dashboardsOptions: {
+        options: {},
+        errors: null,
+        isDirty: false,
+        isSaving: false,
+        feedback: null
+    }
+};
+
+--- FIN DE ARCHIVO: src\common\js\store\state.js ---
+
+
+--- INICIO DE ARCHIVO: src\common\main.js ---
+import './js/main';
+import './scss/main.scss';
+import * as comps from './js/components/main';
+import * as api from './js/api';
+
+POETICSOFT_HEART.comps = comps;
+POETICSOFT_HEART.api = api;
+
+--- FIN DE ARCHIVO: src\common\main.js ---

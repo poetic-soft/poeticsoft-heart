@@ -8,7 +8,7 @@ use Exception;
 use Poeticsoft\Heart\Main as Heart;
 use Poeticsoft\Heart\API\Main as API;
 
-class Options
+class Option
 {
     protected $api;
 
@@ -21,7 +21,7 @@ class Options
     {
 
         return [
-            'options' => [
+            'option' => [
                 'public' => [
                     'get',
                     'update'
@@ -35,38 +35,32 @@ class Options
     {
 
         return [
-            'options' => [
+            'option' => [
                 [
                     'path' => 'get',
                     'methods' => 'POST',
-                    'callback' => [$this, 'api_options_get']
+                    'callback' => [$this, 'api_option_get']
                 ],
                 [
                     'path' => 'update',
                     'methods' => 'POST',
-                    'callback' => [$this, 'api_options_update']
+                    'callback' => [$this, 'api_option_update']
                 ]
             ]
         ];
     }
 
-    public function api_options_get(WP_REST_Request $req)
+    public function api_option_get(WP_REST_Request $req)
     {
-
-        $res = new WP_REST_Response();
 
         try {
 
-            $params = $req->get_params();
+            $option_name = $req->get_param('option_name');
 
-            $options = $params['options'];
-
-            $response = [];
-
-            foreach ($options as $option) {
-
-                $response[$option] = get_option($option, '');
-            }
+            $response = [
+                'option_name' => $option_name,
+                'option_value' => get_option($option_name, '')
+            ];
 
             return $this->api->send_response($response);
         } catch (Exception $e) {
@@ -81,10 +75,8 @@ class Options
 
     // AIzaSyB_bPBjFNQqRl0GZC2yeJ9OO5UtzkeGFWQ
 
-    public function api_options_update(WP_REST_Request $req)
+    public function api_option_update(WP_REST_Request $req)
     {
-
-        $res = new WP_REST_Response();
 
         try {
 
@@ -92,12 +84,10 @@ class Options
 
             $user_id = get_current_user_id();
 
-            $settings = $params['settings'];
+            $option_name = $params['option_name'];
+            $option_value = $params['option_value'];
 
-            foreach ($settings as $key => $setting) {
-
-                update_option($key, $setting);
-            }
+            update_option($option_name, $option_value);
 
             return $this->api->send_response([
                 'user_id' => $user_id

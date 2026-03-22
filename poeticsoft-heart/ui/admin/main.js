@@ -1,5 +1,4 @@
 /******/ (() => { // webpackBootstrap
-/******/ 	"use strict";
 /******/ 	var __webpack_modules__ = ({
 
 /***/ "./src/admin/js/main.js"
@@ -8,39 +7,11 @@
   \******************************/
 (__unused_webpack_module, __webpack_exports__, __webpack_require__) {
 
+"use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _portals_dashboards_main__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./portals/dashboards/main */ "./src/admin/js/portals/dashboards/main.js");
+/* harmony import */ var _portals_dashboards_main__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_portals_dashboards_main__WEBPACK_IMPORTED_MODULE_0__);
 
-
-/***/ },
-
-/***/ "./src/admin/js/portals/dashboards/aiagent/main.js"
-/*!*********************************************************!*\
-  !*** ./src/admin/js/portals/dashboards/aiagent/main.js ***!
-  \*********************************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
-
-__webpack_require__.r(__webpack_exports__);
-/* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
-/* harmony export */ });
-/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (function (props) {
-  var SectionField = window.poeticsoft_heart.comps.SectionField;
-  var sections = props.data;
-  var onChange = function onChange(value) {
-    console.log(value);
-  };
-  var errorMsg = 'Error';
-  return /*#__PURE__*/React.createElement("div", {
-    className: "Dashboard aiagent"
-  }, sections.map(function (section) {
-    return /*#__PURE__*/React.createElement(SectionField, {
-      item: section,
-      onChange: onChange,
-      errorMsg: errorMsg
-    });
-  }));
-});
 
 /***/ },
 
@@ -48,34 +19,14 @@ __webpack_require__.r(__webpack_exports__);
 /*!*************************************************!*\
   !*** ./src/admin/js/portals/dashboards/main.js ***!
   \*************************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+() {
 
-__webpack_require__.r(__webpack_exports__);
-/* harmony import */ var common_js_config__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! common/js/config */ "./src/common/js/config.js");
-/* harmony import */ var _aiagent_main__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./aiagent/main */ "./src/admin/js/portals/dashboards/aiagent/main.js");
 var dispatch = wp.data.dispatch;
-
-
-dispatch(common_js_config__WEBPACK_IMPORTED_MODULE_0__["default"].store_key).addPortal({
+var DashboardOptionsManager = POETICSOFT_HEART.comps.DashboardOptionsManager;
+dispatch(POETICSOFT_HEART.store_key).portalsAdd({
   selector: '.postbox .DashboardWidget.poeticsoft_heart_gemini',
   target: '.Portal',
-  comp: /*#__PURE__*/React.createElement(_aiagent_main__WEBPACK_IMPORTED_MODULE_1__["default"], null)
-});
-
-/***/ },
-
-/***/ "./src/common/js/config.js"
-/*!*********************************!*\
-  !*** ./src/common/js/config.js ***!
-  \*********************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
-
-__webpack_require__.r(__webpack_exports__);
-/* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
-/* harmony export */ });
-/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = ({
-  store_key: 'poeticsoft_heart/store'
+  comp: /*#__PURE__*/React.createElement(DashboardOptionsManager, null)
 });
 
 /***/ },
@@ -86,6 +37,7 @@ __webpack_require__.r(__webpack_exports__);
   \**********************************/
 (__unused_webpack_module, __webpack_exports__, __webpack_require__) {
 
+"use strict";
 __webpack_require__.r(__webpack_exports__);
 // extracted by mini-css-extract-plugin
 
@@ -125,6 +77,18 @@ __webpack_require__.r(__webpack_exports__);
 /******/ 	}
 /******/ 	
 /************************************************************************/
+/******/ 	/* webpack/runtime/compat get default export */
+/******/ 	(() => {
+/******/ 		// getDefaultExport function for compatibility with non-harmony modules
+/******/ 		__webpack_require__.n = (module) => {
+/******/ 			var getter = module && module.__esModule ?
+/******/ 				() => (module['default']) :
+/******/ 				() => (module);
+/******/ 			__webpack_require__.d(getter, { a: getter });
+/******/ 			return getter;
+/******/ 		};
+/******/ 	})();
+/******/ 	
 /******/ 	/* webpack/runtime/define property getters */
 /******/ 	(() => {
 /******/ 		// define getter functions for harmony exports
@@ -155,8 +119,9 @@ __webpack_require__.r(__webpack_exports__);
 /******/ 	
 /************************************************************************/
 var __webpack_exports__ = {};
-// This entry needs to be wrapped in an IIFE because it needs to be isolated against other modules in the chunk.
+// This entry needs to be wrapped in an IIFE because it needs to be in strict mode.
 (() => {
+"use strict";
 /*!***************************!*\
   !*** ./src/admin/main.js ***!
   \***************************/

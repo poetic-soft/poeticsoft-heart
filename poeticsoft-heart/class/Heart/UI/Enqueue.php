@@ -9,11 +9,17 @@ class Enqueue
 {
     private $heart;
     private $ui;
+    private $config;
 
     public function __construct(UI $ui)
     {
         $this->ui = $ui;
         $this->heart = $ui->heart;
+
+        $this->config = 'const POETICSOFT_HEART = ' .
+            json_encode([
+                'store_key' => 'poeticsoft_heart/store'
+            ]);
 
         $this->enqueue_ui();
     }
@@ -76,29 +82,32 @@ class Enqueue
             ]
         ];
 
+        $enqueue_url = $url . 'ui/' . $section;
+        $enqueue_path = $path . 'ui/' . $section;
+
         /**
          * DEBUG
          */
         // Heart::log([
         //     'enqueue_id' => $enqueue_id,
-        //     'url' => $url . '/ui/' . $section . '/main.js',
+        //     'url' => $enqueue_url . '/main.js',
         //     'deps' => $deps[$section],
-        //     'path' => $path . '/ui/' . $section . '/main.js'
+        //     'path' => $enqueue_path . '/main.js'
         // ]);
 
         wp_enqueue_script(
             $enqueue_id,
-            $url . '/ui/' . $section . '/main.js',
+            $enqueue_url . '/main.js',
             $deps[$section],
-            filemtime($path . '/ui/' . $section . '/main.js'),
+            filemtime($enqueue_path . '/main.js'),
             true
         );
 
         wp_enqueue_style(
             $enqueue_id,
-            $url . '/ui/' . $section . '/main.css',
+            $enqueue_url . '/main.css',
             [],
-            filemtime($path . '/ui/' . $section . '/main.css'),
+            filemtime($enqueue_path . '/main.css'),
             'all'
         );
     }
@@ -109,6 +118,10 @@ class Enqueue
         add_action(
             'admin_enqueue_scripts',
             function () {
+
+                wp_register_script('poeticsoft_heart_config', false);
+                wp_add_inline_script('poeticsoft_heart_config', $this->config);
+                wp_enqueue_script('poeticsoft_heart_config');
 
                 $this->enqueue('common');
 
@@ -133,6 +146,10 @@ class Enqueue
         add_action(
             'wp_enqueue_scripts',
             function () {
+
+                wp_register_script('poeticsoft_heart_config', false);
+                wp_add_inline_script('poeticsoft_heart_config', $this->config);
+                wp_enqueue_script('poeticsoft_heart_config');
 
                 $this->enqueue('frontend');
 

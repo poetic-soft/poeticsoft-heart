@@ -34,7 +34,7 @@ class Main
         $data,
         int $status = 200,
         bool $success = true
-    ): WP_REST_Response {
+    ) {
 
         $response = [
             'code' => '',

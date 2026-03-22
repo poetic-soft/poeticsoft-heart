@@ -2,19 +2,18 @@ const { useState } = wp.element;
 const { useSelect } = wp.data;
 const { createPortal, cloneElement } = wp.element;
 
-import config from 'common/js/config';
-
 export default () => {
     const [portalList, setPortalList] = useState([]);
     useSelect((select) => {
         const detected = [];
-        const portals = select(config.store_key).portalsGet();
+        const portals = select(POETICSOFT_HEART.store_key).portalsGet();
 
         portals.forEach((portal) => {
             const selector = portal.selector;
             const elements = document.querySelectorAll(selector);
             elements.forEach((el) => {
                 const target = el.querySelector(portal.target);
+
                 if (target) {
                     if (!target.dataset.portalInitialized) {
                         target.innerHTML = '';

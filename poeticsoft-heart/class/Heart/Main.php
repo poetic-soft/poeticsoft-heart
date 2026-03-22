@@ -31,9 +31,7 @@ class Main
 
     // -------------------------------------------------------------------------------
 
-    private function __clone()
-    {
-    }
+    private function __clone() {}
 
     public function __wakeup()
     {
@@ -53,14 +51,14 @@ class Main
     {
 
         $id = 'poeticsoft-heart';
-        $plugin_file = WP_PLUGIN_DIR . '/' . $id . '/' . $id . '.php';
+        $plugin_file = wp_normalize_path(WP_PLUGIN_DIR . '/' . $id . '/' . $id . '.php');
 
         $this->id = $id;
         $this->version = '0.0.0';
         $this->plugin_file = $plugin_file;
         $this->basename = plugin_basename($plugin_file);
-        $this->path = plugin_dir_path($plugin_file);
-        $this->url = plugin_dir_url($plugin_file);
+        $this->url = '/wp-content/plugins/poeticsoft-heart/';
+        $this->path = wp_normalize_path(WP_PLUGIN_DIR . '/poeticsoft-heart/');
 
         $this->admin = new Admin($this);
         $this->api = new API($this);

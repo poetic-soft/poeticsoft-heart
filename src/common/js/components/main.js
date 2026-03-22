@@ -1,1 +1,1 @@
-export * from './section-field';
+export * from './dashboard/main';

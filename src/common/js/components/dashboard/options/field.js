@@ -1,7 +1,5 @@
-/**
- * Componente de campo dinámico (field.js)
- */
 const { memo } = wp.element;
+const { useSelect, useDispatch } = wp.data;
 const {
     TextControl,
     TextareaControl,
@@ -11,21 +9,29 @@ const {
     RadioControl
 } = wp.components;
 
-export const SectionField = memo(({ item, onChange, errorMsg }) => {
-    const { type, title, description, value, key, options } = item;
+export const DashboardOptionsField = memo((option) => {
+    const store_key = POETICSOFT_HEART.store_key;
 
-    // Props comunes
+    const { type, title, description, value, option_name } = option;
+
+    const onChange = (optionName, value) => {
+        console.log(optionName, value);
+    };
+
+    const errorMsg = null;
+
+    const optionValue = useSelect((select) => {
+        return select(store_key).dashboardsOptionGet(option_name);
+    });
+
     const commonProps = {
         label: title,
         help: errorMsg || description,
-        value: value,
-        onChange: (val) => onChange(key, val),
+        value: value || optionValue,
+        onChange: (val) => onChange(optionName, val),
         className: errorMsg ? 'is-error' : ''
     };
 
-    /**
-     * Renderizado según el tipo definido en el esquema
-     */
     switch (type) {
         case 'textarea':
             return <TextareaControl {...commonProps} rows={8} />;
@@ -35,7 +41,7 @@ export const SectionField = memo(({ item, onChange, errorMsg }) => {
                 <CheckboxControl
                     {...commonProps}
                     checked={!!value}
-                    onChange={(val) => onChange(key, val)}
+                    onChange={(val) => onChange(optionName, val)}
                 />
             );
 
@@ -44,7 +50,7 @@ export const SectionField = memo(({ item, onChange, errorMsg }) => {
                 <ToggleControl
                     {...commonProps}
                     checked={!!value}
-                    onChange={(val) => onChange(key, val)}
+                    onChange={(val) => onChange(optionName, val)}
                 />
             );
 
@@ -56,7 +62,7 @@ export const SectionField = memo(({ item, onChange, errorMsg }) => {
                 <RadioControl
                     {...commonProps}
                     options={options || []}
-                    onChange={(val) => onChange(key, val)}
+                    onChange={(val) => onChange(optionName, val)}
                 />
             );
 

@@ -7,13 +7,17 @@
     "admin": "webpack --env=admin",
     "frontend": "webpack --env=frontend",
     "blockbase": "webpack --env=block-base",
-    "blockcontrol": "webpack --env=blockcontrol"
+    "blockcontrol": "webpack --env=blockcontrol",
+    "tree": "node src-tree.js",
+    "code": "node src-code.js",
+    "treecode": "npm run tree && npm run code"
   },
   "dependencies": {
     "@babel/core": "^7.18.10",
     "@babel/preset-env": "^7.18.10",
     "@babel/preset-react": "^7.18.6",
-    "@babel/runtime": "^7.18.9"
+    "@babel/runtime": "^7.18.9",
+    "immer": "^11.1.4"
   },
   "babel": {
     "presets": [

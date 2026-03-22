@@ -1,9 +1,7 @@
 import './js/main';
 import './scss/main.scss';
 import * as comps from './js/components/main';
+import * as api from './js/api';
 
-window.poeticsoft_heart = {
-    id: 'poeticsoft_heart',
-    store_key: 'poeticsoft_heart/store',
-    comps: comps
-};
+POETICSOFT_HEART.comps = comps;
+POETICSOFT_HEART.api = api;

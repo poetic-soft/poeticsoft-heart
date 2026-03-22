@@ -56,7 +56,7 @@ abstract class Dashboard
         );
 
         echo '<div class="DashboardWidget ' . $full_id . '">
-            <div class="Portal">' .
+            <div id="' . $full_id . '" class="Portal">' .
             $this->description . '. Cargando editor...' .
             '</div>
             <script

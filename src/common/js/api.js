@@ -3,7 +3,7 @@
  */
 const { apiFetch } = wp;
 
-const API_BASE = 'playmotiv/theme/player';
+const API_BASE = 'poeticsoft/heart';
 const IS_DEV = true; // Cambiar a false en producción
 
 export const apiClient = {
@@ -11,19 +11,20 @@ export const apiClient = {
      * Helper para logs de desarrollo
      */
     _log(endpoint, response) {
-        // if (!IS_DEV) return;
-        // const { data } = response;
-        // const meta = data?.meta;
-        // console.groupCollapsed(
-        //     `%c API: ${endpoint}`,
-        //     'color: #007cba; font-weight: bold;'
-        // );
-        // if (meta) {
-        //     console.log(`Fecha API: ${meta.fecha}`);
-        //     console.log(`Timestamp: ${meta.timestampms}`);
-        // }
+        if (!IS_DEV) return;
+        const { data } = response;
+        const meta = data?.meta;
+        console.groupCollapsed(
+            `%c API: ${endpoint}`,
+            'color: #007cba; font-weight: bold;'
+        );
+        if (meta) {
+            console.log(`Fecha API: ${meta.fecha}`);
+            console.log(`Timestamp: ${meta.timestampms}`);
+        }
         // console.log('Respuesta completa:', response);
-        // console.groupEnd();
+        console.log('data:', response.data.data);
+        console.groupEnd();
     },
 
     /**
