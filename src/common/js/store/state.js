@@ -8,12 +8,11 @@ export default {
  *
  */
 // state: {
-//     dashboardOptions: {
-//         optionName: {
+//     dashboardsOptions: {
+//         option_name: {
 //             value: 'value',
-//             errors: [],
-//             isDirty: false,
-//             isSaving: false,
+//             status: '', // ready, loading, updating, dirty
+//             error: [], ???
 //             feedback: null
 //         }
 //     }

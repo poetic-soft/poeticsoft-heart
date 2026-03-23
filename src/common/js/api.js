@@ -40,7 +40,7 @@ export const apiClient = {
                 data: body
             });
 
-            this._log(endpoint, response);
+            // this._log(endpoint, response);
 
             // Validamos la estructura anidada de Playmotiv
             if (response && response.data && response.data.success) {

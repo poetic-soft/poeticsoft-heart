@@ -8,12 +8,12 @@ import './portals/dashboards/main';
 
 --- INICIO DE ARCHIVO: src\admin\js\portals\dashboards\main.js ---
 const { dispatch } = wp.data;
-const { DashboardOptionsManager } = POETICSOFT_HEART.comps;
+const { DashboardsOptionsManager } = POETICSOFT_HEART.comps;
 
 dispatch(POETICSOFT_HEART.store_key).portalsAdd({
     selector: '.postbox .DashboardWidget.poeticsoft_heart_gemini',
     target: '.Portal',
-    comp: <DashboardOptionsManager />
+    comp: <DashboardsOptionsManager />
 });
 
 --- FIN DE ARCHIVO: src\admin\js\portals\dashboards\main.js ---
@@ -51,7 +51,8 @@ export const apiClient = {
             console.log(`Fecha API: ${meta.fecha}`);
             console.log(`Timestamp: ${meta.timestampms}`);
         }
-        console.log('Respuesta completa:', response);
+        // console.log('Respuesta completa:', response);
+        console.log('data:', response.data.data);
         console.groupEnd();
     },
 
@@ -119,26 +120,18 @@ export * from './options/main';
 
 --- INICIO DE ARCHIVO: src\common\js\components\dashboard\options\field.js ---
 const { memo } = wp.element;
+const { useSelect, useDispatch } = wp.data;
 const {
     TextControl,
     TextareaControl,
     CheckboxControl,
     ToggleControl,
     SelectControl,
-    RadioControl
+    RadioControl,
+    Button
 } = wp.components;
 
-export const DashboardOptionsField = memo(({ option, onChange, errorMsg }) => {
-    const { type, title, description, value, option_name, options } = option;
-
-    const commonProps = {
-        label: title,
-        help: errorMsg || description,
-        value: value,
-        onChange: (val) => onChange(option_name, val),
-        className: errorMsg ? 'is-error' : ''
-    };
-
+const Field = ({ type, commonProps }) => {
     switch (type) {
         case 'textarea':
             return <TextareaControl {...commonProps} rows={8} />;
@@ -147,42 +140,77 @@ export const DashboardOptionsField = memo(({ option, onChange, errorMsg }) => {
             return (
                 <CheckboxControl
                     {...commonProps}
-                    checked={!!value}
-                    onChange={(val) => onChange(option_name, val)}
+                    checked={!!commonProps.value}
                 />
             );
 
         case 'toggle':
             return (
-                <ToggleControl
-                    {...commonProps}
-                    checked={!!value}
-                    onChange={(val) => onChange(option_name, val)}
-                />
+                <ToggleControl {...commonProps} checked={!!commonProps.value} />
             );
 
         case 'select':
-            return <SelectControl {...commonProps} options={options || []} />;
+            return <SelectControl {...commonProps} />;
 
         case 'radio':
-            return (
-                <RadioControl
-                    {...commonProps}
-                    options={options || []}
-                    onChange={(val) => onChange(option_name, val)}
-                />
-            );
+            return <RadioControl {...commonProps} />;
 
         case 'email':
         case 'number':
         case 'tel':
         case 'url':
-            return <TextControl {...commonProps} type={type} />;
+            return <TextControl {...commonProps} />;
 
         case 'text':
         default:
             return <TextControl {...commonProps} />;
     }
+};
+
+export const DashboardsOptionsField = memo((option) => {
+    const store_key = POETICSOFT_HEART.store_key;
+
+    const { type, title, description, value, option_name } = option;
+
+    const onChange = (optionName, value) => {
+        console.log(optionName, value);
+    };
+
+    const errorMsg = null;
+
+    const dashboardsOption = useSelect((select) => {
+        return select(store_key).dashboardsOptionGet(option_name);
+    });
+
+    const commonProps = {
+        label: title,
+        help: errorMsg || description,
+        value: dashboardsOption?.value || value,
+        onChange: onChange,
+        className: errorMsg ? 'is-error' : ''
+    };
+
+    const disabled =
+        !dashboardsOption ||
+        dashboardsOption.status == 'updating' ||
+        dashboardsOption.status != 'dirty';
+
+    useEffect(() => {
+        useDispatch(store_key).dashboardsOptionSet(option);
+    }, []);
+
+    return (
+        <div className="option-field">
+            <div className="field">
+                {<Field type={type} commonProps={commonProps} />}
+            </div>
+            <Button
+                variant="primary"
+                icon={disabled ? 'edit' : 'saved'}
+                disabled={disabled}
+            />
+        </div>
+    );
 });
 
 --- FIN DE ARCHIVO: src\common\js\components\dashboard\options\field.js ---
@@ -197,79 +225,15 @@ export * from './manager';
 
 --- INICIO DE ARCHIVO: src\common\js\components\dashboard\options\manager.js ---
 // src/common/js/components/dashboard/options/manager.js
-const { memo, useEffect, useMemo, useLayoutEffect } = wp.element;
-const { useSelect, useDispatch } = wp.data;
-import { DashboardOptionsField } from './field';
+const { memo } = wp.element;
+import { DashboardsOptionsField } from './field';
 
-export const DashboardOptionsManager = memo((props) => {
-    const { store_key } = POETICSOFT_HEART; // [cite: 72]
-    const {
-        dashboardsOptionsAdd,
-        dashboardsOptionsUpdateValue,
-        dashboardsOptionsSave
-    } = useDispatch(store_key);
-
-    // Mapeamos los option_names que pertenecen a esta instancia del widget
-    const myOptionNames = useMemo(
-        () => props.data?.map((opt) => opt.option_name) || [],
-        [props.data]
-    );
-
-    useLayoutEffect(() => {
-        if (props.data) dashboardsOptionsAdd(props.data);
-    }, [props.data]);
-
-    const { options, feedbacks, isSaving } = useSelect(
-        (select) => {
-            const store = select(store_key);
-            const state = store.dashboardsOptionsGet();
-
-            const myOptions = {};
-            const myFeedbacks = {};
-
-            // Extraemos solo las opciones que este manager debe renderizar
-            myOptionNames.forEach((name) => {
-                if (state.options[name]) {
-                    myOptions[name] = state.options[name];
-                    myFeedbacks[name] = state.feedback
-                        ? state.feedback[name]
-                        : null;
-                }
-            });
-
-            return {
-                options: myOptions,
-                feedbacks: myFeedbacks,
-                isSaving: state.isSaving
-            };
-        },
-        [myOptionNames]
-    );
-
-    const handleFieldChange = (optionName, newValue) => {
-        // 1. Actualizamos el store inmediatamente (UI fluida)
-        dashboardsOptionsUpdateValue(optionName, newValue);
-
-        // 2. Opcional: Guardar automáticamente
-        // (En producción mejor usar un debounce para no saturar la API)
-        dashboardsOptionsSave(optionName);
-    };
-
+export const DashboardsOptionsManager = memo((props) => {
     return (
-        <div
-            className={`dashboard-options-manager ${isSaving ? 'is-busy' : ''}`}
-        >
-            {Object.values(options).map((option) => (
-                <DashboardOptionsField
-                    key={option.option_name}
-                    option={option}
-                    onChange={(unusedKey, val) =>
-                        handleFieldChange(option.option_name, val)
-                    }
-                    errorMsg={null}
-                />
+        <div className="dashboard-options">
+            {props.data.map((option) => (
+                <DashboardsOptionsField {...option} />
             ))}
-            {isSaving && <span className="spinner is-active"></span>}
         </div>
     );
 });
@@ -331,6 +295,7 @@ export default () => {
             const elements = document.querySelectorAll(selector);
             elements.forEach((el) => {
                 const target = el.querySelector(portal.target);
+
                 if (target) {
                     if (!target.dataset.portalInitialized) {
                         target.innerHTML = '';
@@ -370,7 +335,6 @@ export default () => {
             return hasChanges ? detected : prevPortals;
         });
     }, []);
-
     return (
         <>{portalList.map((p) => createPortal(p.component, p.target, p.id))}</>
     );
@@ -381,69 +345,24 @@ export default () => {
 
 --- INICIO DE ARCHIVO: src\common\js\store\actions\dashboards-options.js ---
 export default {
-    dashboardsOptionsAdd(options) {
-        return { type: 'DASHBOARD_OPTIONS_ADD', payload: options };
-    },
-    dashboardsOptionsSetValues(values) {
-        return { type: 'DASHBOARD_OPTIONS_SET_VALUES', payload: values };
-    },
-    dashboardsOptionsUpdateValue(optionName, value) {
+    dashboardsOptionSet(data) {
+        console.log(data);
         return {
-            type: 'DASHBOARD_OPTIONS_UPDATE_VALUE',
-            payload: { optionName, value }
+            type: 'DASHBOARD_OPTION_SET',
+            payload: data
         };
     },
-    dashboardsOptionsSetSaving(isSaving) {
-        return { type: 'DASHBOARD_SET_SAVING', payload: isSaving };
-    },
-    *dashboardsOptionsSave(optionName) {
-        const { api, store_key } = POETICSOFT_HEART; // [cite: 187]
-        const { select } = wp.data;
-        const option =
-            select(store_key).dashboardsOptionsGet().options[optionName];
-
-        if (!option) return;
-
-        // Estado: Guardando
-        yield {
-            type: 'DASHBOARD_OPTIONS_SET_FEEDBACK',
-            payload: { optionName, status: 'saving', message: 'Guardando...' }
+    dashboardsOptionSetStatus(data) {
+        return {
+            type: 'DASHBOARD_OPTION_SET_STATUS',
+            payload: data
         };
-
-        try {
-            const response = yield api.apiClient.post('v1/options/set', {
-                option_name: option.option_name,
-                value: option.value
-            });
-
-            if (response.success) {
-                yield {
-                    type: 'DASHBOARD_OPTIONS_SET_FEEDBACK',
-                    payload: {
-                        optionName,
-                        status: 'success',
-                        message: 'Guardado'
-                    }
-                };
-                // Limpiar éxito tras 3 segundos
-                setTimeout(() => {
-                    wp.data
-                        .dispatch(store_key)
-                        .dashboardsOptionsClearFeedback(optionName);
-                }, 3000);
-            } else {
-                throw new Error(response.message);
-            }
-        } catch (error) {
-            yield {
-                type: 'DASHBOARD_OPTIONS_SET_FEEDBACK',
-                payload: {
-                    optionName,
-                    status: 'error',
-                    message: error.message || 'Error'
-                }
-            };
-        }
+    },
+    dashboardsOptionSetValue(data) {
+        return {
+            type: 'DASHBOARD_OPTION_SET_VALUE',
+            payload: data
+        };
     }
 };
 
@@ -495,51 +414,15 @@ registerStore(POETICSOFT_HEART.store_key, {
 --- INICIO DE ARCHIVO: src\common\js\store\reducer\dashboard.js ---
 // src/common/js/store/reducer/dashboard.js
 export default (draft, action) => {
+    console.log(action);
     switch (action.type) {
-        case 'DASHBOARD_OPTIONS_ADD':
-            action.payload.forEach((option) => {
-                if (!draft.dashboardsOptions.options[option.option_name]) {
-                    draft.dashboardsOptions.options[option.option_name] =
-                        option;
-                }
-            });
+        case 'DASHBOARD_OPTION_SET_STATUS':
+            draft.dashboardsOptions[action.payload.optionName].status =
+                action.payload.status;
             break;
-
-        case 'DASHBOARD_OPTIONS_SET_VALUES':
-            console.log(action.payload);
-
-            Object.entries(action.payload).forEach(([optionName, value]) => {
-                if (draft.dashboardsOptions.options[optionName]) {
-                    draft.dashboardsOptions.options[optionName].value = value;
-                }
-            });
-            break;
-
-        case 'DASHBOARD_OPTIONS_UPDATE_VALUE': {
-            const { optionName, value } = action.payload;
-            if (draft.dashboardsOptions.options[optionName]) {
-                draft.dashboardsOptions.options[optionName].value = value;
-                draft.dashboardsOptions.isDirty = true; // Marcamos que hay cambios sin guardar
-            }
-            break;
-        }
-
-        case 'DASHBOARD_SET_SAVING':
-            draft.dashboardsOptions.isSaving = action.payload;
-            break;
-
-        case 'DASHBOARD_OPTIONS_SET_FEEDBACK': {
-            const { optionName, status, message } = action.payload;
-            if (!draft.dashboardsOptions.feedback)
-                draft.dashboardsOptions.feedback = {};
-            draft.dashboardsOptions.feedback[optionName] = { status, message };
-            break;
-        }
-
-        case 'DASHBOARD_OPTIONS_CLEAR_FEEDBACK':
-            if (draft.dashboardsOptions.feedback) {
-                delete draft.dashboardsOptions.feedback[action.payload];
-            }
+        case 'DASHBOARD_OPTION_SET_VALUE':
+            draft.dashboardsOptions[action.payload.optionName].value =
+                action.payload.value;
             break;
     }
 };
@@ -577,29 +460,24 @@ export default (draft, action) => {
 
 
 --- INICIO DE ARCHIVO: src\common\js\store\resolvers\dashboards-options.js ---
-import actions from '../actions/main';
+import actions from 'common/js/store/actions/main';
 
 export default {
-    // WordPress inyecta los argumentos del selector aquí
-    *dashboardsOptionsGet() {
+    *dashboardsOptionGet(optionName) {
         const { api, store_key } = POETICSOFT_HEART;
-        const { select } = wp.data;
-
-        // Accedemos al estado actual sin disparar selectores recursivos
-        const state = select(store_key).dashboardsOptionsGet();
-        const optionNames = Object.keys(state.options || {});
-
-        // Si el Manager aún no ha hecho el 'ADD', no podemos pedir nada
-        if (optionNames.length === 0) return;
 
         try {
-            const response = yield api.apiClient.post('v1/options/get', {
-                option_names: optionNames
+            actions.dashboardsOptionSetStatus({
+                optionName: optionName,
+                status: 'updating'
+            });
+
+            const response = yield api.apiClient.post('v1/option/get', {
+                option_name: optionName
             });
 
             if (response.success) {
-                // ESTO disparará el reducer DASHBOARD_OPTIONS_SET_VALUES
-                yield actions.dashboardsOptionsSetValues(response.data);
+                yield actions.dashboardsOptionSetValue(response.data);
             }
         } catch (e) {
             console.error('Error en hidratación:', e);
@@ -633,8 +511,8 @@ export default {};
 
 --- INICIO DE ARCHIVO: src\common\js\store\selectors\dashboards-options.js ---
 export default {
-    dashboardsOptionsGet(state) {
-        return state.dashboardsOptions;
+    dashboardsOptionGet(state, optionName) {
+        return state.dashboardsOptions[optionName];
     }
 };
 
@@ -666,23 +544,32 @@ export default {
 --- INICIO DE ARCHIVO: src\common\js\store\state.js ---
 export default {
     portals: [],
-    dashboardsOptions: {
-        options: {},
-        errors: null,
-        isDirty: false,
-        isSaving: false,
-        feedback: null
-    }
+    dashboardsOptions: {}
 };
+
+/**
+ * Dashboard option
+ *
+ */
+// state: {
+//     dashboardsOptions: {
+//         optionName: {
+//             value: 'value',
+//             status: '', // updating, dirty
+//             error: [],
+//             feedback: null
+//         }
+//     }
+// }
 
 --- FIN DE ARCHIVO: src\common\js\store\state.js ---
 
 
 --- INICIO DE ARCHIVO: src\common\main.js ---
-import './js/main';
-import './scss/main.scss';
 import * as comps from './js/components/main';
 import * as api from './js/api';
+import './js/main';
+import './scss/main.scss';
 
 POETICSOFT_HEART.comps = comps;
 POETICSOFT_HEART.api = api;

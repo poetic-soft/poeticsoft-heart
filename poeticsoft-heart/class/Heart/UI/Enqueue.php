@@ -151,7 +151,7 @@ class Enqueue
                 wp_add_inline_script('poeticsoft_heart_config', $this->config);
                 wp_enqueue_script('poeticsoft_heart_config');
 
-                $this->enqueue('frontend');
+                // $this->enqueue('frontend');
 
                 $forges = $this->heart->forge->get_forges();
                 foreach ($forges as $forge_id => $forge) {

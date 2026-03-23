@@ -45,8 +45,7 @@ var apiClient = {
    * Request principal
    */
   request: function request(endpoint) {
-    var _arguments = arguments,
-      _this = this;
+    var _arguments = arguments;
     return _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee() {
       var method, body, path, _response$data, _response$data2, response, _t;
       return _regenerator().w(function (_context) {
@@ -64,9 +63,6 @@ var apiClient = {
             });
           case 2:
             response = _context.v;
-            _this._log(endpoint, response);
-
-            // Validamos la estructura anidada de Playmotiv
             if (!(response && response.data && response.data.success)) {
               _context.n = 3;
               break;
@@ -117,8 +113,8 @@ var apiClient = {
 
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   DashboardOptionsField: () => (/* reexport safe */ _options_main__WEBPACK_IMPORTED_MODULE_0__.DashboardOptionsField),
-/* harmony export */   DashboardOptionsManager: () => (/* reexport safe */ _options_main__WEBPACK_IMPORTED_MODULE_0__.DashboardOptionsManager)
+/* harmony export */   DashboardsOptionsField: () => (/* reexport safe */ _options_main__WEBPACK_IMPORTED_MODULE_0__.DashboardsOptionsField),
+/* harmony export */   DashboardsOptionsManager: () => (/* reexport safe */ _options_main__WEBPACK_IMPORTED_MODULE_0__.DashboardsOptionsManager)
 /* harmony export */ });
 /* harmony import */ var _options_main__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./options/main */ "./src/common/js/components/dashboard/options/main.js");
 
@@ -133,10 +129,12 @@ __webpack_require__.r(__webpack_exports__);
 
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   DashboardOptionsField: () => (/* binding */ DashboardOptionsField)
+/* harmony export */   DashboardsOptionsField: () => (/* binding */ DashboardsOptionsField)
 /* harmony export */ });
 function _extends() { return _extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, _extends.apply(null, arguments); }
-var memo = wp.element.memo;
+var _wp$element = wp.element,
+  memo = _wp$element.memo,
+  useEffect = _wp$element.useEffect;
 var _wp$data = wp.data,
   useSelect = _wp$data.useSelect,
   useDispatch = _wp$data.useDispatch;
@@ -146,30 +144,12 @@ var _wp$components = wp.components,
   CheckboxControl = _wp$components.CheckboxControl,
   ToggleControl = _wp$components.ToggleControl,
   SelectControl = _wp$components.SelectControl,
-  RadioControl = _wp$components.RadioControl;
-var DashboardOptionsField = memo(function (option) {
-  var store_key = POETICSOFT_HEART.store_key;
-  var type = option.type,
-    title = option.title,
-    description = option.description,
-    value = option.value,
-    option_name = option.option_name;
-  var _onChange = function onChange(optionName, value) {
-    console.log(optionName, value);
-  };
-  var errorMsg = null;
-  var optionValue = useSelect(function (select) {
-    return select(store_key).dashboardsOptionGet(option_name);
-  });
-  var commonProps = {
-    label: title,
-    help: errorMsg || description,
-    value: value || optionValue,
-    onChange: function onChange(val) {
-      return _onChange(optionName, val);
-    },
-    className: errorMsg ? 'is-error' : ''
-  };
+  RadioControl = _wp$components.RadioControl,
+  Tooltip = _wp$components.Tooltip,
+  Button = _wp$components.Button;
+var Field = function Field(_ref) {
+  var type = _ref.type,
+    commonProps = _ref.commonProps;
   switch (type) {
     case 'textarea':
       return /*#__PURE__*/React.createElement(TextareaControl, _extends({}, commonProps, {
@@ -177,40 +157,104 @@ var DashboardOptionsField = memo(function (option) {
       }));
     case 'checkbox':
       return /*#__PURE__*/React.createElement(CheckboxControl, _extends({}, commonProps, {
-        checked: !!value,
-        onChange: function onChange(val) {
-          return _onChange(optionName, val);
-        }
+        checked: !!commonProps.value
       }));
     case 'toggle':
       return /*#__PURE__*/React.createElement(ToggleControl, _extends({}, commonProps, {
-        checked: !!value,
-        onChange: function onChange(val) {
-          return _onChange(optionName, val);
-        }
+        checked: !!commonProps.value
       }));
     case 'select':
-      return /*#__PURE__*/React.createElement(SelectControl, _extends({}, commonProps, {
-        options: options || []
-      }));
+      return /*#__PURE__*/React.createElement(SelectControl, commonProps);
     case 'radio':
-      return /*#__PURE__*/React.createElement(RadioControl, _extends({}, commonProps, {
-        options: options || [],
-        onChange: function onChange(val) {
-          return _onChange(optionName, val);
-        }
-      }));
+      return /*#__PURE__*/React.createElement(RadioControl, commonProps);
     case 'email':
     case 'number':
     case 'tel':
     case 'url':
-      return /*#__PURE__*/React.createElement(TextControl, _extends({}, commonProps, {
-        type: type
-      }));
+      return /*#__PURE__*/React.createElement(TextControl, commonProps);
     case 'text':
     default:
       return /*#__PURE__*/React.createElement(TextControl, commonProps);
   }
+};
+var DashboardsOptionsField = memo(function (option) {
+  var store_key = POETICSOFT_HEART.store_key;
+  var type = option.type,
+    title = option.title,
+    description = option.description,
+    value = option.value,
+    option_name = option.option_name;
+  var dashboardsOption = useSelect(function (select) {
+    return select(store_key).dashboardsOptionGet(option_name);
+  });
+  var _useDispatch = useDispatch(store_key),
+    dashboardsOptionSet = _useDispatch.dashboardsOptionSet,
+    dashboardsOptionLoadValue = _useDispatch.dashboardsOptionLoadValue,
+    dashboardsOptionSetValue = _useDispatch.dashboardsOptionSetValue,
+    dashboardsOptionSetStatus = _useDispatch.dashboardsOptionSetStatus,
+    dashboardsOptionSave = _useDispatch.dashboardsOptionSave;
+  var onChange = function onChange(value) {
+    dashboardsOptionSetStatus({
+      option_name: option_name,
+      status: 'dirty'
+    });
+    dashboardsOptionSetValue({
+      option_name: option_name,
+      option_value: value
+    });
+  };
+  var save = function save() {
+    dashboardsOptionSave({
+      option_name: option_name,
+      option_value: dashboardsOption.value
+    });
+  };
+
+  // if (dashboardsOption && option_name == 'poeticsoft_heart_gemini_key') {
+  //     console.log(dashboardsOption);
+  // }
+
+  var editAllowed = !dashboardsOption || dashboardsOption.status == 'ready' || dashboardsOption.status == 'dirty';
+  var saveAllowed = dashboardsOption && dashboardsOption.status == 'dirty';
+  var iconStatus = {
+    // ready, loading, updating, dirty
+    dirty: 'saved',
+    ready: 'edit',
+    loading: 'update-alt',
+    updating: 'update',
+    none: 'ellipsis'
+  };
+  var commonProps = {
+    label: title,
+    help: description,
+    value: (dashboardsOption === null || dashboardsOption === void 0 ? void 0 : dashboardsOption.value) || value,
+    onChange: onChange,
+    className: dashboardsOption === null || dashboardsOption === void 0 ? void 0 : dashboardsOption.status,
+    disabled: !editAllowed
+  };
+  useEffect(function () {
+    dashboardsOptionSet(option);
+    dashboardsOptionLoadValue({
+      option_name: option_name
+    });
+  }, []);
+  console.log(title);
+  return /*#__PURE__*/React.createElement("div", {
+    className: "option-field"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "field"
+  }, /*#__PURE__*/React.createElement(Field, {
+    type: type,
+    commonProps: commonProps
+  })), /*#__PURE__*/React.createElement(Tooltip, {
+    text: "Guardar [ ".concat(title, " ]"),
+    placement: "left"
+  }, /*#__PURE__*/React.createElement(Button, {
+    variant: "primary",
+    icon: iconStatus[(dashboardsOption === null || dashboardsOption === void 0 ? void 0 : dashboardsOption.status) || 'none'],
+    disabled: !saveAllowed,
+    onClick: save
+  })));
 });
 
 /***/ },
@@ -223,8 +267,8 @@ var DashboardOptionsField = memo(function (option) {
 
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   DashboardOptionsField: () => (/* reexport safe */ _field__WEBPACK_IMPORTED_MODULE_0__.DashboardOptionsField),
-/* harmony export */   DashboardOptionsManager: () => (/* reexport safe */ _manager__WEBPACK_IMPORTED_MODULE_1__.DashboardOptionsManager)
+/* harmony export */   DashboardsOptionsField: () => (/* reexport safe */ _field__WEBPACK_IMPORTED_MODULE_0__.DashboardsOptionsField),
+/* harmony export */   DashboardsOptionsManager: () => (/* reexport safe */ _manager__WEBPACK_IMPORTED_MODULE_1__.DashboardsOptionsManager)
 /* harmony export */ });
 /* harmony import */ var _field__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./field */ "./src/common/js/components/dashboard/options/field.js");
 /* harmony import */ var _manager__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./manager */ "./src/common/js/components/dashboard/options/manager.js");
@@ -241,17 +285,17 @@ __webpack_require__.r(__webpack_exports__);
 
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   DashboardOptionsManager: () => (/* binding */ DashboardOptionsManager)
+/* harmony export */   DashboardsOptionsManager: () => (/* binding */ DashboardsOptionsManager)
 /* harmony export */ });
 /* harmony import */ var _field__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./field */ "./src/common/js/components/dashboard/options/field.js");
 // src/common/js/components/dashboard/options/manager.js
 var memo = wp.element.memo;
 
-var DashboardOptionsManager = memo(function (props) {
+var DashboardsOptionsManager = memo(function (props) {
   return /*#__PURE__*/React.createElement("div", {
     className: "dashboard-options"
   }, props.data.map(function (option) {
-    return /*#__PURE__*/React.createElement(_field__WEBPACK_IMPORTED_MODULE_0__.DashboardOptionsField, option);
+    return /*#__PURE__*/React.createElement(_field__WEBPACK_IMPORTED_MODULE_0__.DashboardsOptionsField, option);
   }));
 });
 
@@ -265,8 +309,8 @@ var DashboardOptionsManager = memo(function (props) {
 
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   DashboardOptionsField: () => (/* reexport safe */ _dashboard_main__WEBPACK_IMPORTED_MODULE_0__.DashboardOptionsField),
-/* harmony export */   DashboardOptionsManager: () => (/* reexport safe */ _dashboard_main__WEBPACK_IMPORTED_MODULE_0__.DashboardOptionsManager)
+/* harmony export */   DashboardsOptionsField: () => (/* reexport safe */ _dashboard_main__WEBPACK_IMPORTED_MODULE_0__.DashboardsOptionsField),
+/* harmony export */   DashboardsOptionsManager: () => (/* reexport safe */ _dashboard_main__WEBPACK_IMPORTED_MODULE_0__.DashboardsOptionsManager)
 /* harmony export */ });
 /* harmony import */ var _dashboard_main__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./dashboard/main */ "./src/common/js/components/dashboard/main.js");
 
@@ -396,7 +440,64 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
 /* harmony export */ });
+/* harmony import */ var common_js_store_actions_main__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! common/js/store/actions/main */ "./src/common/js/store/actions/main.js");
+function _regenerator() { /*! regenerator-runtime -- Copyright (c) 2014-present, Facebook, Inc. -- license (MIT): https://github.com/babel/babel/blob/main/packages/babel-helpers/LICENSE */ var e, t, r = "function" == typeof Symbol ? Symbol : {}, n = r.iterator || "@@iterator", o = r.toStringTag || "@@toStringTag"; function i(r, n, o, i) { var c = n && n.prototype instanceof Generator ? n : Generator, u = Object.create(c.prototype); return _regeneratorDefine2(u, "_invoke", function (r, n, o) { var i, c, u, f = 0, p = o || [], y = !1, G = { p: 0, n: 0, v: e, a: d, f: d.bind(e, 4), d: function d(t, r) { return i = t, c = 0, u = e, G.n = r, a; } }; function d(r, n) { for (c = r, u = n, t = 0; !y && f && !o && t < p.length; t++) { var o, i = p[t], d = G.p, l = i[2]; r > 3 ? (o = l === n) && (u = i[(c = i[4]) ? 5 : (c = 3, 3)], i[4] = i[5] = e) : i[0] <= d && ((o = r < 2 && d < i[1]) ? (c = 0, G.v = n, G.n = i[1]) : d < l && (o = r < 3 || i[0] > n || n > l) && (i[4] = r, i[5] = n, G.n = l, c = 0)); } if (o || r > 1) return a; throw y = !0, n; } return function (o, p, l) { if (f > 1) throw TypeError("Generator is already running"); for (y && 1 === p && d(p, l), c = p, u = l; (t = c < 2 ? e : u) || !y;) { i || (c ? c < 3 ? (c > 1 && (G.n = -1), d(c, u)) : G.n = u : G.v = u); try { if (f = 2, i) { if (c || (o = "next"), t = i[o]) { if (!(t = t.call(i, u))) throw TypeError("iterator result is not an object"); if (!t.done) return t; u = t.value, c < 2 && (c = 0); } else 1 === c && (t = i["return"]) && t.call(i), c < 2 && (u = TypeError("The iterator does not provide a '" + o + "' method"), c = 1); i = e; } else if ((t = (y = G.n < 0) ? u : r.call(n, G)) !== a) break; } catch (t) { i = e, c = 1, u = t; } finally { f = 1; } } return { value: t, done: y }; }; }(r, o, i), !0), u; } var a = {}; function Generator() {} function GeneratorFunction() {} function GeneratorFunctionPrototype() {} t = Object.getPrototypeOf; var c = [][n] ? t(t([][n]())) : (_regeneratorDefine2(t = {}, n, function () { return this; }), t), u = GeneratorFunctionPrototype.prototype = Generator.prototype = Object.create(c); function f(e) { return Object.setPrototypeOf ? Object.setPrototypeOf(e, GeneratorFunctionPrototype) : (e.__proto__ = GeneratorFunctionPrototype, _regeneratorDefine2(e, o, "GeneratorFunction")), e.prototype = Object.create(u), e; } return GeneratorFunction.prototype = GeneratorFunctionPrototype, _regeneratorDefine2(u, "constructor", GeneratorFunctionPrototype), _regeneratorDefine2(GeneratorFunctionPrototype, "constructor", GeneratorFunction), GeneratorFunction.displayName = "GeneratorFunction", _regeneratorDefine2(GeneratorFunctionPrototype, o, "GeneratorFunction"), _regeneratorDefine2(u), _regeneratorDefine2(u, o, "Generator"), _regeneratorDefine2(u, n, function () { return this; }), _regeneratorDefine2(u, "toString", function () { return "[object Generator]"; }), (_regenerator = function _regenerator() { return { w: i, m: f }; })(); }
+function _regeneratorDefine2(e, r, n, t) { var i = Object.defineProperty; try { i({}, "", {}); } catch (e) { i = 0; } _regeneratorDefine2 = function _regeneratorDefine(e, r, n, t) { function o(r, n) { _regeneratorDefine2(e, r, function (e) { return this._invoke(r, n, e); }); } r ? i ? i(e, r, { value: n, enumerable: !t, configurable: !t, writable: !t }) : e[r] = n : (o("next", 0), o("throw", 1), o("return", 2)); }, _regeneratorDefine2(e, r, n, t); }
+
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = ({
+  dashboardsOptionSet: function dashboardsOptionSet(data) {
+    return {
+      type: 'DASHBOARD_OPTION_SET',
+      payload: data
+    };
+  },
+  dashboardsOptionLoadValue: /*#__PURE__*/_regenerator().m(function dashboardsOptionLoadValue(data) {
+    var response, _t;
+    return _regenerator().w(function (_context) {
+      while (1) switch (_context.p = _context.n) {
+        case 0:
+          _context.p = 0;
+          _context.n = 1;
+          return common_js_store_actions_main__WEBPACK_IMPORTED_MODULE_0__["default"].dashboardsOptionSetStatus({
+            option_name: data.option_name,
+            status: 'loading'
+          });
+        case 1:
+          _context.n = 2;
+          return {
+            type: 'API_FETCH',
+            method: 'post',
+            path: 'v1/option/get',
+            data: {
+              option_name: data.option_name
+            }
+          };
+        case 2:
+          response = _context.v;
+          if (!response.success) {
+            _context.n = 4;
+            break;
+          }
+          _context.n = 3;
+          return common_js_store_actions_main__WEBPACK_IMPORTED_MODULE_0__["default"].dashboardsOptionSetValue(response.data);
+        case 3:
+          _context.n = 4;
+          return common_js_store_actions_main__WEBPACK_IMPORTED_MODULE_0__["default"].dashboardsOptionSetStatus({
+            option_name: data.option_name,
+            status: 'ready'
+          });
+        case 4:
+          _context.n = 6;
+          break;
+        case 5:
+          _context.p = 5;
+          _t = _context.v;
+          console.error('Error en hidratación:', _t);
+        case 6:
+          return _context.a(2);
+      }
+    }, dashboardsOptionLoadValue, null, [[0, 5]]);
+  }),
   dashboardsOptionSetStatus: function dashboardsOptionSetStatus(data) {
     return {
       type: 'DASHBOARD_OPTION_SET_STATUS',
@@ -404,12 +505,56 @@ __webpack_require__.r(__webpack_exports__);
     };
   },
   dashboardsOptionSetValue: function dashboardsOptionSetValue(data) {
-    console.log(data);
     return {
       type: 'DASHBOARD_OPTION_SET_VALUE',
       payload: data
     };
-  }
+  },
+  dashboardsOptionSave: /*#__PURE__*/_regenerator().m(function dashboardsOptionSave(data) {
+    var response, _t2;
+    return _regenerator().w(function (_context2) {
+      while (1) switch (_context2.p = _context2.n) {
+        case 0:
+          _context2.p = 0;
+          _context2.n = 1;
+          return common_js_store_actions_main__WEBPACK_IMPORTED_MODULE_0__["default"].dashboardsOptionSetStatus({
+            option_name: data.option_name,
+            status: 'updating'
+          });
+        case 1:
+          _context2.n = 2;
+          return {
+            type: 'API_FETCH',
+            method: 'post',
+            path: 'v1/option/update',
+            data: {
+              option_name: data.option_name,
+              option_value: data.option_value
+            }
+          };
+        case 2:
+          response = _context2.v;
+          if (!response.success) {
+            _context2.n = 3;
+            break;
+          }
+          _context2.n = 3;
+          return common_js_store_actions_main__WEBPACK_IMPORTED_MODULE_0__["default"].dashboardsOptionSetStatus({
+            option_name: data.option_name,
+            status: 'ready'
+          });
+        case 3:
+          _context2.n = 5;
+          break;
+        case 4:
+          _context2.p = 4;
+          _t2 = _context2.v;
+          console.error('Error en hidratación:', _t2);
+        case 5:
+          return _context2.a(2);
+      }
+    }, dashboardsOptionSave, null, [[0, 4]]);
+  })
 });
 
 /***/ },
@@ -459,6 +604,47 @@ __webpack_require__.r(__webpack_exports__);
 
 /***/ },
 
+/***/ "./src/common/js/store/controls/api.js"
+/*!*********************************************!*\
+  !*** ./src/common/js/store/controls/api.js ***!
+  \*********************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
+/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = ({
+  API_FETCH: function API_FETCH(action) {
+    var apiClient = POETICSOFT_HEART.api.apiClient;
+    return apiClient[action.method](action.path, action.data);
+  }
+});
+
+/***/ },
+
+/***/ "./src/common/js/store/controls/main.js"
+/*!**********************************************!*\
+  !*** ./src/common/js/store/controls/main.js ***!
+  \**********************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
+/* harmony import */ var _api__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./api */ "./src/common/js/store/controls/api.js");
+function _typeof(o) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, _typeof(o); }
+function ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
+function _objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t = null != arguments[r] ? arguments[r] : {}; r % 2 ? ownKeys(Object(t), !0).forEach(function (r) { _defineProperty(e, r, t[r]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys(Object(t)).forEach(function (r) { Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r)); }); } return e; }
+function _defineProperty(e, r, t) { return (r = _toPropertyKey(r)) in e ? Object.defineProperty(e, r, { value: t, enumerable: !0, configurable: !0, writable: !0 }) : e[r] = t, e; }
+function _toPropertyKey(t) { var i = _toPrimitive(t, "string"); return "symbol" == _typeof(i) ? i : i + ""; }
+function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != _typeof(i)) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
+
+/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (_objectSpread({}, _api__WEBPACK_IMPORTED_MODULE_0__["default"]));
+
+/***/ },
+
 /***/ "./src/common/js/store/main.js"
 /*!*************************************!*\
   !*** ./src/common/js/store/main.js ***!
@@ -470,7 +656,9 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _selectors_main__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./selectors/main */ "./src/common/js/store/selectors/main.js");
 /* harmony import */ var _reducer_main__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./reducer/main */ "./src/common/js/store/reducer/main.js");
 /* harmony import */ var _resolvers_main__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./resolvers/main */ "./src/common/js/store/resolvers/main.js");
+/* harmony import */ var _controls_main__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./controls/main */ "./src/common/js/store/controls/main.js");
 var registerStore = wp.data.registerStore;
+
 
 
 
@@ -479,7 +667,8 @@ registerStore(POETICSOFT_HEART.store_key, {
   reducer: _reducer_main__WEBPACK_IMPORTED_MODULE_2__["default"],
   actions: _actions_main__WEBPACK_IMPORTED_MODULE_0__["default"],
   selectors: _selectors_main__WEBPACK_IMPORTED_MODULE_1__["default"],
-  resolvers: _resolvers_main__WEBPACK_IMPORTED_MODULE_3__["default"]
+  resolvers: _resolvers_main__WEBPACK_IMPORTED_MODULE_3__["default"],
+  controls: _controls_main__WEBPACK_IMPORTED_MODULE_4__["default"]
 });
 
 /***/ },
@@ -494,14 +683,19 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
 /* harmony export */ });
-// src/common/js/store/reducer/dashboard.js
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (function (draft, action) {
   switch (action.type) {
+    case 'DASHBOARD_OPTION_SET':
+      draft.dashboardsOptions[action.payload.option_name] = action.payload;
+      break;
+    case 'DASHBOARD_OPTION_LOAD_VALUE':
+      draft.dashboardsOptions[action.payload.option_name] = action.payload;
+      break;
     case 'DASHBOARD_OPTION_SET_STATUS':
-      draft.dashboardsOptions[action.payload.optionName].status = action.payload.status;
+      draft.dashboardsOptions[action.payload.option_name].status = action.payload.status;
       break;
     case 'DASHBOARD_OPTION_SET_VALUE':
-      draft.dashboardsOptions[action.payload.optionName].value = action.payload.value;
+      draft.dashboardsOptions[action.payload.option_name].value = action.payload.option_value;
       break;
   }
 });
@@ -568,45 +762,25 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
 /* harmony export */ });
 /* harmony import */ var common_js_store_actions_main__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! common/js/store/actions/main */ "./src/common/js/store/actions/main.js");
-function _regenerator() { /*! regenerator-runtime -- Copyright (c) 2014-present, Facebook, Inc. -- license (MIT): https://github.com/babel/babel/blob/main/packages/babel-helpers/LICENSE */ var e, t, r = "function" == typeof Symbol ? Symbol : {}, n = r.iterator || "@@iterator", o = r.toStringTag || "@@toStringTag"; function i(r, n, o, i) { var c = n && n.prototype instanceof Generator ? n : Generator, u = Object.create(c.prototype); return _regeneratorDefine2(u, "_invoke", function (r, n, o) { var i, c, u, f = 0, p = o || [], y = !1, G = { p: 0, n: 0, v: e, a: d, f: d.bind(e, 4), d: function d(t, r) { return i = t, c = 0, u = e, G.n = r, a; } }; function d(r, n) { for (c = r, u = n, t = 0; !y && f && !o && t < p.length; t++) { var o, i = p[t], d = G.p, l = i[2]; r > 3 ? (o = l === n) && (u = i[(c = i[4]) ? 5 : (c = 3, 3)], i[4] = i[5] = e) : i[0] <= d && ((o = r < 2 && d < i[1]) ? (c = 0, G.v = n, G.n = i[1]) : d < l && (o = r < 3 || i[0] > n || n > l) && (i[4] = r, i[5] = n, G.n = l, c = 0)); } if (o || r > 1) return a; throw y = !0, n; } return function (o, p, l) { if (f > 1) throw TypeError("Generator is already running"); for (y && 1 === p && d(p, l), c = p, u = l; (t = c < 2 ? e : u) || !y;) { i || (c ? c < 3 ? (c > 1 && (G.n = -1), d(c, u)) : G.n = u : G.v = u); try { if (f = 2, i) { if (c || (o = "next"), t = i[o]) { if (!(t = t.call(i, u))) throw TypeError("iterator result is not an object"); if (!t.done) return t; u = t.value, c < 2 && (c = 0); } else 1 === c && (t = i["return"]) && t.call(i), c < 2 && (u = TypeError("The iterator does not provide a '" + o + "' method"), c = 1); i = e; } else if ((t = (y = G.n < 0) ? u : r.call(n, G)) !== a) break; } catch (t) { i = e, c = 1, u = t; } finally { f = 1; } } return { value: t, done: y }; }; }(r, o, i), !0), u; } var a = {}; function Generator() {} function GeneratorFunction() {} function GeneratorFunctionPrototype() {} t = Object.getPrototypeOf; var c = [][n] ? t(t([][n]())) : (_regeneratorDefine2(t = {}, n, function () { return this; }), t), u = GeneratorFunctionPrototype.prototype = Generator.prototype = Object.create(c); function f(e) { return Object.setPrototypeOf ? Object.setPrototypeOf(e, GeneratorFunctionPrototype) : (e.__proto__ = GeneratorFunctionPrototype, _regeneratorDefine2(e, o, "GeneratorFunction")), e.prototype = Object.create(u), e; } return GeneratorFunction.prototype = GeneratorFunctionPrototype, _regeneratorDefine2(u, "constructor", GeneratorFunctionPrototype), _regeneratorDefine2(GeneratorFunctionPrototype, "constructor", GeneratorFunction), GeneratorFunction.displayName = "GeneratorFunction", _regeneratorDefine2(GeneratorFunctionPrototype, o, "GeneratorFunction"), _regeneratorDefine2(u), _regeneratorDefine2(u, o, "Generator"), _regeneratorDefine2(u, n, function () { return this; }), _regeneratorDefine2(u, "toString", function () { return "[object Generator]"; }), (_regenerator = function _regenerator() { return { w: i, m: f }; })(); }
-function _regeneratorDefine2(e, r, n, t) { var i = Object.defineProperty; try { i({}, "", {}); } catch (e) { i = 0; } _regeneratorDefine2 = function _regeneratorDefine(e, r, n, t) { function o(r, n) { _regeneratorDefine2(e, r, function (e) { return this._invoke(r, n, e); }); } r ? i ? i(e, r, { value: n, enumerable: !t, configurable: !t, writable: !t }) : e[r] = n : (o("next", 0), o("throw", 1), o("return", 2)); }, _regeneratorDefine2(e, r, n, t); }
 
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = ({
-  dashboardsOptionGet: /*#__PURE__*/_regenerator().m(function dashboardsOptionGet(optionName) {
-    var _POETICSOFT_HEART, api, store_key, response, _t;
-    return _regenerator().w(function (_context) {
-      while (1) switch (_context.p = _context.n) {
-        case 0:
-          _POETICSOFT_HEART = POETICSOFT_HEART, api = _POETICSOFT_HEART.api, store_key = _POETICSOFT_HEART.store_key;
-          _context.p = 1;
-          common_js_store_actions_main__WEBPACK_IMPORTED_MODULE_0__["default"].dashboardsOptionSetStatus({
-            optionName: optionName,
-            status: 'updating'
-          });
-          _context.n = 2;
-          return api.apiClient.post('v1/option/get', {
-            option_name: optionName
-          });
-        case 2:
-          response = _context.v;
-          if (!response.success) {
-            _context.n = 3;
-            break;
-          }
-          _context.n = 3;
-          return common_js_store_actions_main__WEBPACK_IMPORTED_MODULE_0__["default"].dashboardsOptionSetValue(response.data);
-        case 3:
-          _context.n = 5;
-          break;
-        case 4:
-          _context.p = 4;
-          _t = _context.v;
-          console.error('Error en hidratación:', _t);
-        case 5:
-          return _context.a(2);
-      }
-    }, dashboardsOptionGet, null, [[1, 4]]);
-  })
+  // *dashboardsOptionGet(option_name) {
+  //     const { api, store_key } = POETICSOFT_HEART;
+  //     try {
+  //         actions.dashboardsOptionSetStatus({
+  //             option_name: option_name,
+  //             status: 'updating'
+  //         });
+  //         const response = yield api.apiClient.post('v1/option/get', {
+  //             option_name: option_name
+  //         });
+  //         if (response.success) {
+  //             yield actions.dashboardsOptionSetValue(response.data);
+  //         }
+  //     } catch (e) {
+  //         console.error('Error en hidratación:', e);
+  //     }
+  // }
 });
 
 /***/ },
@@ -646,7 +820,6 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
 /* harmony export */ });
 /* harmony import */ var common_js_store_actions_main__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! common/js/store/actions/main */ "./src/common/js/store/actions/main.js");
-// const { apiClient } = POETICSOFT_HEART.api;
 
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = ({});
 
@@ -663,8 +836,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
 /* harmony export */ });
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = ({
-  dashboardsOptionGet: function dashboardsOptionGet(state, optionName) {
-    return state.dashboardsOptions[optionName];
+  dashboardsOptionGet: function dashboardsOptionGet(state, option_name) {
+    return state.dashboardsOptions[option_name];
   }
 });
 
@@ -732,12 +905,11 @@ __webpack_require__.r(__webpack_exports__);
  *
  */
 // state: {
-//     dashboardOptions: {
-//         optionName: {
+//     dashboardsOptions: {
+//         option_name: {
 //             value: 'value',
-//             errors: [],
-//             isDirty: false,
-//             isSaving: false,
+//             status: '', // ready, loading, updating, dirty
+//             error: [], ???
 //             feedback: null
 //         }
 //     }
@@ -2500,16 +2672,16 @@ var __webpack_exports__ = {};
   !*** ./src/common/main.js ***!
   \****************************/
 __webpack_require__.r(__webpack_exports__);
-/* harmony import */ var _js_main__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./js/main */ "./src/common/js/main.js");
-/* harmony import */ var _scss_main_scss__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./scss/main.scss */ "./src/common/scss/main.scss");
-/* harmony import */ var _js_components_main__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./js/components/main */ "./src/common/js/components/main.js");
-/* harmony import */ var _js_api__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./js/api */ "./src/common/js/api.js");
+/* harmony import */ var _js_components_main__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./js/components/main */ "./src/common/js/components/main.js");
+/* harmony import */ var _js_api__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./js/api */ "./src/common/js/api.js");
+/* harmony import */ var _js_main__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./js/main */ "./src/common/js/main.js");
+/* harmony import */ var _scss_main_scss__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./scss/main.scss */ "./src/common/scss/main.scss");
 
 
 
 
-POETICSOFT_HEART.comps = _js_components_main__WEBPACK_IMPORTED_MODULE_2__;
-POETICSOFT_HEART.api = _js_api__WEBPACK_IMPORTED_MODULE_3__;
+POETICSOFT_HEART.comps = _js_components_main__WEBPACK_IMPORTED_MODULE_0__;
+POETICSOFT_HEART.api = _js_api__WEBPACK_IMPORTED_MODULE_1__;
 })();
 
 /******/ })()

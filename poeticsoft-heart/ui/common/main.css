@@ -23,6 +23,18 @@
   --s20: calc(var(--space) * 14);
 }
 
+.postbox .inside .DashboardWidget .Portal .dashboard-options .option-field {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--s);
+}
+.postbox .inside .DashboardWidget .Portal .dashboard-options .option-field .field {
+  flex: 1;
+}
+.postbox .inside .DashboardWidget .Portal .dashboard-options .option-field button {
+  margin-top: var(--s3);
+}
+
 .Metabox.route .Portal .playmotiv-page-route-wrapper .route-display {
   padding: var(--s);
   text-align: center;

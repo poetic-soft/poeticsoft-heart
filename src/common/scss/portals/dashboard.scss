@@ -1,21 +1,21 @@
-.DashboardWidget {
+.postbox .inside .DashboardWidget .Portal {
 
-  .Portal {
+  .dashboard-options {
 
-    .playmotiv-editor-wrapper {
+    .option-field {
 
-      .playmotiv-fields-container {
+      display: flex;
+      justify-content: space-between;
+      gap: var(--s);
 
+      .field {
 
+        flex: 1;
       }
 
-      .playmotiv-feedback-area {
-        
-      } 
+      button {
 
-      .playmotiv-form-actions {
-
-
+        margin-top: var(--s3);
       }
     }
   }

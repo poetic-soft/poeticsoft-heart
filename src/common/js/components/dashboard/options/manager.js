@@ -1,12 +1,12 @@
 // src/common/js/components/dashboard/options/manager.js
 const { memo } = wp.element;
-import { DashboardOptionsField } from './field';
+import { DashboardsOptionsField } from './field';
 
-export const DashboardOptionsManager = memo((props) => {
+export const DashboardsOptionsManager = memo((props) => {
     return (
         <div className="dashboard-options">
             {props.data.map((option) => (
-                <DashboardOptionsField {...option} />
+                <DashboardsOptionsField {...option} />
             ))}
         </div>
     );

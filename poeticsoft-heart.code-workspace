@@ -5,15 +5,15 @@
 		}
 	],
   "settings": {
-    // "emeraldwalk.runonsave": {
-    //   "autoClearConsole": true,
-    //   "commands": [
-    //     {
-    //       "match": ".*", 
-    //       "isShellCommand": true,
-    //           "cmd": "powershell -Command \"$wshell = New-Object -ComObject WScript.Shell; if ($wshell.AppActivate('Chrome')) { Start-Sleep -Milliseconds 250; $wshell.SendKeys('{F5}') }\""
-    //     }
-    //   ]
-    // }
+    "emeraldwalk.runonsave": {
+      "autoClearConsole": true,
+      "commands": [
+        {
+          "match": ".*", 
+          "isShellCommand": true,
+              "cmd": "powershell -Command \"$wshell = New-Object -ComObject WScript.Shell; if ($wshell.AppActivate('Chrome')) { Start-Sleep -Milliseconds 250; $wshell.SendKeys('{F5}') }\""
+        }
+      ]
+    }
   }
 }

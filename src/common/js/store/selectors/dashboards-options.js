@@ -1,5 +1,5 @@
 export default {
-    dashboardsOptionGet(state, optionName) {
-        return state.dashboardsOptions[optionName];
+    dashboardsOptionGet(state, option_name) {
+        return state.dashboardsOptions[option_name];
     }
 };

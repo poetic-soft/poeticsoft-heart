@@ -22,11 +22,11 @@ __webpack_require__.r(__webpack_exports__);
 () {
 
 var dispatch = wp.data.dispatch;
-var DashboardOptionsManager = POETICSOFT_HEART.comps.DashboardOptionsManager;
+var DashboardsOptionsManager = POETICSOFT_HEART.comps.DashboardsOptionsManager;
 dispatch(POETICSOFT_HEART.store_key).portalsAdd({
   selector: '.postbox .DashboardWidget.poeticsoft_heart_gemini',
   target: '.Portal',
-  comp: /*#__PURE__*/React.createElement(DashboardOptionsManager, null)
+  comp: /*#__PURE__*/React.createElement(DashboardsOptionsManager, null)
 });
 
 /***/ },
