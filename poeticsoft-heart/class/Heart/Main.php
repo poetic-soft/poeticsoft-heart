@@ -7,7 +7,7 @@ use Poeticsoft\Heart\Admin\Main as Admin;
 use Poeticsoft\Heart\API\Main as API;
 use Poeticsoft\Heart\Forge\Main as Forge;
 use Poeticsoft\Heart\UI\Main as UI;
-use Poeticsoft\Heart\AIAgent\Main as AIAgent;
+use Poeticsoft\Heart\AI\Main as AI;
 
 class Main
 {
@@ -17,7 +17,7 @@ class Main
     public API $api;
     public Forge $forge;
     public UI $ui;
-    public AIAgent $ai_agent;
+    public AI $ai;
 
     // -------------------------------------------------------------------------------
 
@@ -31,7 +31,9 @@ class Main
 
     // -------------------------------------------------------------------------------
 
-    private function __clone() {}
+    private function __clone()
+    {
+    }
 
     public function __wakeup()
     {
@@ -64,7 +66,7 @@ class Main
         $this->api = new API($this);
         $this->forge = new Forge($this);
         $this->ui = new UI($this);
-        $this->ai_agent = new AIAgent($this);
+        $this->ai = new AI($this);
     }
 
     // -------------------------------------------------------------------------------

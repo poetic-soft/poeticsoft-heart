@@ -1,26 +1,27 @@
 ========================================
 ESTRUCTURA DEL PROYECTO: POETICSOFT-HEART
-Generado el: 2026-03-16 22:31:00
+Generado el: 2026-04-10 23:28:05
 ========================================
 
 ├── class
 │   └── Heart
-│       ├── AIAgent
-│       │   ├── Gemini.php
+│       ├── AI
 │       │   └── Main.php
 │       ├── API
 │       │   ├── Auth.php
 │       │   ├── Endpoints.php
 │       │   ├── Local
 │       │   │   ├── Main.php
-│       │   │   └── Options.php
+│       │   │   └── Option.php
 │       │   ├── Main.php
 │       │   └── WhiteList.php
 │       ├── Admin
 │       │   ├── Dashboard
-│       │   │   ├── AIAgent
+│       │   │   ├── AI
+│       │   │   │   ├── DeepSeek.php
 │       │   │   │   ├── Gemini.php
-│       │   │   │   └── Main.php
+│       │   │   │   ├── Main.php
+│       │   │   │   └── VLM.php
 │       │   │   └── Main.php
 │       │   ├── Inspector.php
 │       │   ├── Main.php
@@ -45,7 +46,12 @@ Generado el: 2026-03-16 22:31:00
 ├── composer.json
 ├── poeticsoft-heart.php
 ├── ui
-│   └── admin
+│   ├── admin
+│   │   ├── main.css
+│   │   ├── main.css.map
+│   │   ├── main.js
+│   │   └── main.js.map
+│   └── common
 │       ├── main.css
 │       ├── main.css.map
 │       ├── main.js

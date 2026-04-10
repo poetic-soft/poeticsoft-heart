@@ -6,3 +6,15 @@ dispatch(POETICSOFT_HEART.store_key).portalsAdd({
     target: '.Portal',
     comp: <DashboardsOptionsManager />
 });
+
+dispatch(POETICSOFT_HEART.store_key).portalsAdd({
+    selector: '.postbox .DashboardWidget.poeticsoft_heart_deepseek',
+    target: '.Portal',
+    comp: <DashboardsOptionsManager />
+});
+
+dispatch(POETICSOFT_HEART.store_key).portalsAdd({
+    selector: '.postbox .DashboardWidget.poeticsoft_heart_vlm',
+    target: '.Portal',
+    comp: <DashboardsOptionsManager />
+});

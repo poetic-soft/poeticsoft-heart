@@ -22,7 +22,7 @@
 
 namespace Poeticsoft;
 
-use Poeticsoft\Heart\main as Heart;
+use Poeticsoft\Heart\Main as Heart;
 
 if (!defined('ABSPATH')) {
     exit;

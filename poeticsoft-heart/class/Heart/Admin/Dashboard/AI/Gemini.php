@@ -1,6 +1,6 @@
 <?php
 
-namespace Poeticsoft\Heart\Admin\Dashboard\AIAgent;
+namespace Poeticsoft\Heart\Admin\Dashboard\AI;
 
 use Poeticsoft\Heart\Template\Dashboard as DashboardTemplate;
 
@@ -17,8 +17,8 @@ class Gemini extends DashboardTemplate
             [
                 'key' => 'url',
                 'field_type' => 'string',
-                'title' => 'Url de acceso a GL',
-                'description' => 'Url de acceso a la api de Google AI Studio',
+                'title' => 'Url Gemini',
+                'description' => 'Url Gemini',
                 'value' => 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent',
                 'type' => 'text'
             ],
@@ -26,7 +26,7 @@ class Gemini extends DashboardTemplate
                 'key' => 'key',
                 'field_type' => 'string',
                 'title' => 'Gemini API Key',
-                'description' => 'Api Key para la comunicacion con Google AI Studio',
+                'description' => 'Gemini API Key',
                 'value' => '',
                 'type' => 'text'
             ]

@@ -4,8 +4,8 @@ namespace Poeticsoft\Heart\Template;
 
 abstract class Dashboard
 {
-    public $dashboard;
     public $heart;
+    public $dashboard;
     public $forge;
 
     public $id;
@@ -16,10 +16,9 @@ abstract class Dashboard
     public $priority = 'core'; // 'high', 'core', 'default', or 'low'. Default 'core'.
     public $options;
 
-    public function __construct($dashboard, $heart, $forge = null)
+    public function __construct($dashboard, $forge = null)
     {
         $this->dashboard = $dashboard;
-        $this->heart = $heart;
         $this->forge = $forge;
 
         $this->set_values();
@@ -27,13 +26,13 @@ abstract class Dashboard
 
     abstract public function set_values();
 
-    public function content($uno, $args)
+    public function content()
     {
 
         $full_id = str_replace(
             '-',
             '_',
-            $this->heart->get_id() .
+            $this->dashboard->dashboard->admin->heart->get_id() .
                 (
 
                     $this->forge ?

@@ -28,6 +28,16 @@ dispatch(POETICSOFT_HEART.store_key).portalsAdd({
   target: '.Portal',
   comp: /*#__PURE__*/React.createElement(DashboardsOptionsManager, null)
 });
+dispatch(POETICSOFT_HEART.store_key).portalsAdd({
+  selector: '.postbox .DashboardWidget.poeticsoft_heart_deepseek',
+  target: '.Portal',
+  comp: /*#__PURE__*/React.createElement(DashboardsOptionsManager, null)
+});
+dispatch(POETICSOFT_HEART.store_key).portalsAdd({
+  selector: '.postbox .DashboardWidget.poeticsoft_heart_vlm',
+  target: '.Portal',
+  comp: /*#__PURE__*/React.createElement(DashboardsOptionsManager, null)
+});
 
 /***/ },
 

@@ -8,13 +8,10 @@ use Poeticsoft\Heart\Admin\Main as Admin;
 class Main
 {
     private $admin;
-    private $heart;
-    private $ui;
 
     public function __construct(Admin $admin)
     {
         $this->admin = $admin;
-        $this->heart = $admin->heart;
 
         add_action(
             'add_metaboxes',
@@ -25,7 +22,7 @@ class Main
     private function add_metaboxes()
     {
 
-        $forges = $this->heart->forge->get_forges();
+        $forges = $this->admin->heart->forge->get_forges();
         foreach ($forges as $forge_id => $forge) {
 
             if ($forge->get_has_ui_metaboxes()) {

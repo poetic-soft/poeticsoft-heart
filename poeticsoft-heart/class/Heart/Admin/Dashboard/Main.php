@@ -6,22 +6,20 @@ namespace Poeticsoft\Heart\Admin\Dashboard;
 
 use Poeticsoft\Heart\Main as Heart;
 use Poeticsoft\Heart\Admin\Main as Admin;
-use Poeticsoft\Heart\Admin\Dashboard\AIAgent\Main as AIAgent;
+use Poeticsoft\Heart\Admin\Dashboard\AI\Main as AI;
 
 class Main
 {
     public $admin;
 
-    private $heart;
     private $dashboards;
 
     public function __construct(Admin $admin)
     {
         $this->admin = $admin;
-        $this->heart = $this->admin->heart;
 
         $this->dashboards = [
-            new AIAgent($this, $this->heart)
+            new AI($this)
         ];
 
         add_action(
