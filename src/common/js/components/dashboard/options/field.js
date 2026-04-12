@@ -121,8 +121,6 @@ export const DashboardsOptionsField = memo((option) => {
         });
     }, []);
 
-    console.log(title);
-
     return (
         <div className="option-field">
             <div className="field">

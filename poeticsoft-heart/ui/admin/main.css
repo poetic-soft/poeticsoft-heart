@@ -21,6 +21,8 @@
   --s12: calc(var(--space) * 12);
   --s14: calc(var(--space) * 14);
   --s20: calc(var(--space) * 14);
+  --color-grey-a: #ccc;
+  --color-grey-b: #888888;
 }
 
 /*# sourceMappingURL=main.css.map*/

@@ -1,14 +1,19 @@
-const { useState } = wp.element;
+const { useState, useEffect } = wp.element;
 const { useSelect } = wp.data;
 const { createPortal, cloneElement } = wp.element;
 
 export default () => {
-    const [portalList, setPortalList] = useState([]);
-    useSelect((select) => {
-        const detected = [];
-        const portals = select(POETICSOFT_HEART.store_key).portalsGet();
+    const [portalsList, setPortalList] = useState([]);
 
-        portals.forEach((portal) => {
+    const portalsFromStore = useSelect(
+        (select) => select(POETICSOFT_HEART.store_key).portalsGet(),
+        []
+    );
+
+    useEffect(() => {
+        const detected = [];
+
+        portalsFromStore.forEach((portal) => {
             const selector = portal.selector;
             const elements = document.querySelectorAll(selector);
             elements.forEach((el) => {
@@ -41,20 +46,17 @@ export default () => {
                     });
                 }
             });
-        });
 
-        setPortalList((prevPortals) => {
-            if (prevPortals.length !== detected.length) return detected;
-            const hasChanges = detected.some(
-                (p, i) =>
-                    p.id !== prevPortals[i].id ||
-                    p.target !== prevPortals[i].target
-            );
-            return hasChanges ? detected : prevPortals;
+            setPortalList(detected);
         });
-    }, []);
+    }, [portalsFromStore]);
 
     return (
-        <>{portalList.map((p) => createPortal(p.component, p.target, p.id))}</>
+        <>
+            {portalsList.length &&
+                portalsList.map((p) =>
+                    createPortal(p.component, p.target, p.id)
+                )}
+        </>
     );
 };

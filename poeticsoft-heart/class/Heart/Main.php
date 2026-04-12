@@ -43,7 +43,6 @@ class Main
     public static function get_instance(): self
     {
         if (null === self::$instance) {
-
             self::$instance = new self();
         }
         return self::$instance;

@@ -1,8 +1,8 @@
 export default {
-    portalsAdd(portal) {
+    portalsAdd(portals) {
         return {
             type: 'PORTALS_ADD',
-            payload: portal
+            payload: portals
         };
     }
 };

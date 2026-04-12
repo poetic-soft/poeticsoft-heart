@@ -46,9 +46,7 @@ class Blocks
 
                         $forges = $this->heart->forge->get_forges();
                         foreach ($forges as $forge_id => $forge) {
-
                             if ($forge->get_has_ui_blocks()) {
-
                                 $forge_name = $forge->get_name();
 
                                 $posticsoft_heart_category = [
@@ -75,9 +73,7 @@ class Blocks
 
                 $forges = $this->heart->forge->get_forges();
                 foreach ($forges as $forge_id => $forge) {
-
                     if ($forge->get_has_ui_blocks()) {
-
                         $forge_path = $forge->get_plugin_path();
                         $blocks_path = $forge_path . '/block';
                         $block_names = array_diff(
@@ -88,7 +84,6 @@ class Blocks
                         $this->heart->forge->get_forges();
 
                         foreach ($block_names as $key => $block_name) {
-
                             $block_json_dir = $blocks_path . '/' . $block_name;
 
                             $registered = register_block_type($block_json_dir);

@@ -19,4 +19,45 @@
       }
     }
   }
+
+  .dashboard-sections-options {
+
+    .section {
+
+      > .title {
+
+        font-weight: bold;
+        padding: 0 0 var(--s025) 0;
+        border: solid 1px;
+        border-width: 0 0  1px 0;
+        color: var(--color-grey-b);
+      }
+
+      .options {
+
+        .option {
+
+          border: dotted 1px;
+          border-width: 0 0  1px 0;
+          padding: var(--s05) 0;
+          display: flex;
+          flex-wrap: wrap;
+          gap: var(--s);
+
+          .title {
+          }
+
+          .name {
+            
+            font-weight: bold;
+          }
+        }
+      }
+    }
+
+    .section + .section {
+
+      margin: var(--s2) 0 0 0;
+    }
+  }
 }

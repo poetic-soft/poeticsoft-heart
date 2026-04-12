@@ -54,7 +54,6 @@ class Option
     {
 
         try {
-
             $option_name = $req->get_param('option_name');
 
             $response = [
@@ -64,7 +63,6 @@ class Option
 
             return $this->api->send_response($response);
         } catch (Exception $e) {
-
             return $this->api->send_response(
                 $e->getMessage(),
                 $e->getCode() ?: 500,
@@ -79,7 +77,6 @@ class Option
     {
 
         try {
-
             $params = $req->get_params();
 
             $user_id = get_current_user_id();
@@ -93,7 +90,6 @@ class Option
                 'user_id' => $user_id
             ]);
         } catch (Exception $e) {
-
             return $this->api->send_response(
                 $e->getMessage(),
                 $e->getCode() ?: 500,

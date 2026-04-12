@@ -4,8 +4,7 @@ namespace Poeticsoft\Heart\Template;
 
 abstract class Dashboard
 {
-    public $heart;
-    public $dashboard;
+    public $dashboard_instance;
     public $forge;
 
     public $id;
@@ -15,16 +14,24 @@ abstract class Dashboard
     public $context = 'normal'; // 'normal', 'side', 'column3', or 'column4'. Default 'normal'
     public $priority = 'core'; // 'high', 'core', 'default', or 'low'. Default 'core'.
     public $options;
+    public $data;
 
-    public function __construct($dashboard, $forge = null)
+    public function __construct($dashboard_instance, $forge = null)
     {
-        $this->dashboard = $dashboard;
+        $this->dashboard_instance = $dashboard_instance;
         $this->forge = $forge;
 
         $this->set_values();
+
+        add_action(
+            'poeticsoft_heart_dashboard_created',
+            [$this, 'set_data']
+        );
     }
 
     abstract public function set_values();
+
+    public function set_data() {}
 
     public function content()
     {
@@ -32,7 +39,7 @@ abstract class Dashboard
         $full_id = str_replace(
             '-',
             '_',
-            $this->dashboard->dashboard->admin->heart->get_id() .
+            $this->dashboard_instance->dashboard->admin->heart->get_id() .
                 (
 
                     $this->forge ?
@@ -62,8 +69,18 @@ abstract class Dashboard
                 type="application/JSON"
                 class="data" 
             >' .
-            json_encode($options, JSON_PRETTY_PRINT) .
+            (
+                count($options) ?
+                json_encode($options, JSON_PRETTY_PRINT)
+                : (
+                    $this->data ?
+                    json_encode($this->data, JSON_PRETTY_PRINT)
+                    :
+                    ''
+                )
+            ) .
             '</script>
+            
         </div>';
     }
 }

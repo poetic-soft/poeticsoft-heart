@@ -28,10 +28,8 @@ class Inspector
         $logfile = $this->heart->get_logfile();
 
         if (empty($logfile)) {
-
             $results['Log System'] = '⚠️ Ruta no definida';
         } else {
-
             if (file_exists($logfile)) {
                 $results['Log Status'] = is_writable($logfile) ? '✅ Escribible' : '❌ Sin permisos';
             } else {
@@ -58,7 +56,6 @@ class Inspector
         $is_test_mode = (isset($_GET['test_forge']) ? sanitize_key($_GET['test_forge']) : '') === '1';
 
         if (!$is_test_mode) {
-
             return;
         }
 
@@ -70,7 +67,6 @@ class Inspector
             ||
             !wp_verify_nonce($_GET['_wpnonce'], 'wp_rest')
         ) {
-
             wp_die(__('Seguridad fallida: Token inválido', 'poeticsoft-heart'));
         }
 
@@ -229,7 +225,7 @@ class Inspector
                 </a>
             </div>
         </div>
-<?php
+        <?php
     }
 
     /**

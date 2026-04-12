@@ -22,22 +22,26 @@ __webpack_require__.r(__webpack_exports__);
 () {
 
 var dispatch = wp.data.dispatch;
-var DashboardsOptionsManager = POETICSOFT_HEART.comps.DashboardsOptionsManager;
-dispatch(POETICSOFT_HEART.store_key).portalsAdd({
+var _POETICSOFT_HEART$com = POETICSOFT_HEART.comps,
+  DashboardsOptionsManager = _POETICSOFT_HEART$com.DashboardsOptionsManager,
+  DashboardsSectionsOptions = _POETICSOFT_HEART$com.DashboardsSectionsOptions;
+dispatch(POETICSOFT_HEART.store_key).portalsAdd([{
   selector: '.postbox .DashboardWidget.poeticsoft_heart_gemini',
   target: '.Portal',
   comp: /*#__PURE__*/React.createElement(DashboardsOptionsManager, null)
-});
-dispatch(POETICSOFT_HEART.store_key).portalsAdd({
+}, {
   selector: '.postbox .DashboardWidget.poeticsoft_heart_deepseek',
   target: '.Portal',
   comp: /*#__PURE__*/React.createElement(DashboardsOptionsManager, null)
-});
-dispatch(POETICSOFT_HEART.store_key).portalsAdd({
+}, {
   selector: '.postbox .DashboardWidget.poeticsoft_heart_vlm',
   target: '.Portal',
   comp: /*#__PURE__*/React.createElement(DashboardsOptionsManager, null)
-});
+}, {
+  selector: '.postbox .DashboardWidget.poeticsoft_heart_sections_options',
+  target: '.Portal',
+  comp: /*#__PURE__*/React.createElement(DashboardsSectionsOptions, null)
+}]);
 
 /***/ },
 

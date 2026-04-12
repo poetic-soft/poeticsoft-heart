@@ -13,10 +13,12 @@ ESTRUCTURA DE: E:\trabajo\poeticsoft\forge\poeticsoft.heart\src
     │   ├── components
     │   │   ├── dashboard
     │   │   │   ├── main.js
-    │   │   │   └── options
-    │   │   │       ├── field.js
-    │   │   │       ├── main.js
-    │   │   │       └── manager.js
+    │   │   │   ├── options
+    │   │   │   │   ├── field.js
+    │   │   │   │   ├── main.js
+    │   │   │   │   └── manager.js
+    │   │   │   └── sections-options
+    │   │   │       └── main.js
     │   │   └── main.js
     │   ├── main.js
     │   ├── portals
@@ -27,6 +29,9 @@ ESTRUCTURA DE: E:\trabajo\poeticsoft\forge\poeticsoft.heart\src
     │       │   ├── dashboards-options.js
     │       │   ├── main.js
     │       │   └── portals.js
+    │       ├── controls
+    │       │   ├── api.js
+    │       │   └── main.js
     │       ├── main.js
     │       ├── reducer
     │       │   ├── dashboard.js

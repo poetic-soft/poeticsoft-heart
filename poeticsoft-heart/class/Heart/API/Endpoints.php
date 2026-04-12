@@ -31,11 +31,8 @@ class Endpoints
         $endpoints = $this->api->local->get_endpoints();
 
         foreach ($endpoints as $version => $sections) {
-
             foreach ($sections as $section => $routes) {
-
                 foreach ($routes as $route) {
-
                     $path = $version .
                         '/' .
                         $section .
@@ -65,9 +62,7 @@ class Endpoints
         $forges = $this->heart->forge->get_forges();
 
         foreach ($forges as $forge) {
-
             if ($forge->get_has_api()) {
-
                 $forge_api = $forge->get_api();
 
                 $namespace = str_replace('-', '/', $this->heart->get_id()) .
@@ -77,11 +72,8 @@ class Endpoints
                 $endpoints = $forge_api->get_endpoints();
 
                 foreach ($endpoints as $version => $sections) {
-
                     foreach ($sections as $section => $routes) {
-
                         foreach ($routes as $route) {
-
                             $path = $version .
                                 '/' .
                                 $section .

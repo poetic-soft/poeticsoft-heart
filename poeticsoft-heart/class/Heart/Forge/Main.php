@@ -34,12 +34,9 @@ class Main
         do_action('poeticsoft_heart_register', $this);
 
         foreach ($this->forges as $id => $forge) {
-
             try {
-
                 $forge->init($this->heart);
             } catch (\Exception $e) {
-
                 $this->heart->log("Error al inicializar Forge {$id}: {$e->getMessage()}", 'ERROR');
             }
         }

@@ -114,9 +114,12 @@ var apiClient = {
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   DashboardsOptionsField: () => (/* reexport safe */ _options_main__WEBPACK_IMPORTED_MODULE_0__.DashboardsOptionsField),
-/* harmony export */   DashboardsOptionsManager: () => (/* reexport safe */ _options_main__WEBPACK_IMPORTED_MODULE_0__.DashboardsOptionsManager)
+/* harmony export */   DashboardsOptionsManager: () => (/* reexport safe */ _options_main__WEBPACK_IMPORTED_MODULE_0__.DashboardsOptionsManager),
+/* harmony export */   DashboardsSectionsOptions: () => (/* reexport safe */ _sections_options_main__WEBPACK_IMPORTED_MODULE_1__.DashboardsSectionsOptions)
 /* harmony export */ });
 /* harmony import */ var _options_main__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./options/main */ "./src/common/js/components/dashboard/options/main.js");
+/* harmony import */ var _sections_options_main__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./sections-options/main */ "./src/common/js/components/dashboard/sections-options/main.js");
+
 
 
 /***/ },
@@ -238,7 +241,6 @@ var DashboardsOptionsField = memo(function (option) {
       option_name: option_name
     });
   }, []);
-  console.log(title);
   return /*#__PURE__*/React.createElement("div", {
     className: "option-field"
   }, /*#__PURE__*/React.createElement("div", {
@@ -301,6 +303,48 @@ var DashboardsOptionsManager = memo(function (props) {
 
 /***/ },
 
+/***/ "./src/common/js/components/dashboard/sections-options/main.js"
+/*!*********************************************************************!*\
+  !*** ./src/common/js/components/dashboard/sections-options/main.js ***!
+  \*********************************************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   DashboardsSectionsOptions: () => (/* binding */ DashboardsSectionsOptions)
+/* harmony export */ });
+var memo = wp.element.memo;
+var Tooltip = wp.components.Tooltip;
+var Option = function Option(props) {
+  return /*#__PURE__*/React.createElement("div", {
+    className: "option"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "title"
+  }, props.option_title), /*#__PURE__*/React.createElement("div", {
+    className: "name"
+  }, props.option_name));
+};
+var Section = function Section(props) {
+  return /*#__PURE__*/React.createElement("div", {
+    className: "section"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "title"
+  }, props.title), /*#__PURE__*/React.createElement("div", {
+    className: "options"
+  }, props.options.map(function (option) {
+    return /*#__PURE__*/React.createElement(Option, option);
+  })));
+};
+var DashboardsSectionsOptions = memo(function (props) {
+  return /*#__PURE__*/React.createElement("div", {
+    className: "dashboard-sections-options"
+  }, props.data.map(function (section) {
+    return /*#__PURE__*/React.createElement(Section, section);
+  }));
+});
+
+/***/ },
+
 /***/ "./src/common/js/components/main.js"
 /*!******************************************!*\
   !*** ./src/common/js/components/main.js ***!
@@ -310,7 +354,8 @@ var DashboardsOptionsManager = memo(function (props) {
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   DashboardsOptionsField: () => (/* reexport safe */ _dashboard_main__WEBPACK_IMPORTED_MODULE_0__.DashboardsOptionsField),
-/* harmony export */   DashboardsOptionsManager: () => (/* reexport safe */ _dashboard_main__WEBPACK_IMPORTED_MODULE_0__.DashboardsOptionsManager)
+/* harmony export */   DashboardsOptionsManager: () => (/* reexport safe */ _dashboard_main__WEBPACK_IMPORTED_MODULE_0__.DashboardsOptionsManager),
+/* harmony export */   DashboardsSectionsOptions: () => (/* reexport safe */ _dashboard_main__WEBPACK_IMPORTED_MODULE_0__.DashboardsSectionsOptions)
 /* harmony export */ });
 /* harmony import */ var _dashboard_main__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./dashboard/main */ "./src/common/js/components/dashboard/main.js");
 
@@ -342,10 +387,7 @@ __webpack_require__.r(__webpack_exports__);
 var render = wp.element.render;
 
 var setup = function setup() {
-  var container = document.createElement('div');
-  container.id = 'poeticsoft-heart-portal-root';
-  container.style.display = 'none';
-  document.body.appendChild(container);
+  var container = document.getElementById('poeticsoft-heart-portal-root');
   render(/*#__PURE__*/React.createElement(_manager__WEBPACK_IMPORTED_MODULE_0__["default"], null), container);
 };
 if (document.readyState === 'complete' || document.readyState === 'interactive') {
@@ -372,20 +414,24 @@ function _unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) 
 function _arrayLikeToArray(r, a) { (null == a || a > r.length) && (a = r.length); for (var e = 0, n = Array(a); e < a; e++) n[e] = r[e]; return n; }
 function _iterableToArrayLimit(r, l) { var t = null == r ? null : "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (null != t) { var e, n, i, u, a = [], f = !0, o = !1; try { if (i = (t = t.call(r)).next, 0 === l) { if (Object(t) !== t) return; f = !1; } else for (; !(f = (e = i.call(t)).done) && (a.push(e.value), a.length !== l); f = !0); } catch (r) { o = !0, n = r; } finally { try { if (!f && null != t["return"] && (u = t["return"](), Object(u) !== u)) return; } finally { if (o) throw n; } } return a; } }
 function _arrayWithHoles(r) { if (Array.isArray(r)) return r; }
-var useState = wp.element.useState;
-var useSelect = wp.data.useSelect;
 var _wp$element = wp.element,
-  createPortal = _wp$element.createPortal,
-  cloneElement = _wp$element.cloneElement;
+  useState = _wp$element.useState,
+  useEffect = _wp$element.useEffect;
+var useSelect = wp.data.useSelect;
+var _wp$element2 = wp.element,
+  createPortal = _wp$element2.createPortal,
+  cloneElement = _wp$element2.cloneElement;
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (function () {
   var _useState = useState([]),
     _useState2 = _slicedToArray(_useState, 2),
-    portalList = _useState2[0],
+    portalsList = _useState2[0],
     setPortalList = _useState2[1];
-  useSelect(function (select) {
+  var portalsFromStore = useSelect(function (select) {
+    return select(POETICSOFT_HEART.store_key).portalsGet();
+  }, []);
+  useEffect(function () {
     var detected = [];
-    var portals = select(POETICSOFT_HEART.store_key).portalsGet();
-    portals.forEach(function (portal) {
+    portalsFromStore.forEach(function (portal) {
       var selector = portal.selector;
       var elements = document.querySelectorAll(selector);
       elements.forEach(function (el) {
@@ -414,16 +460,10 @@ var _wp$element = wp.element,
           });
         }
       });
+      setPortalList(detected);
     });
-    setPortalList(function (prevPortals) {
-      if (prevPortals.length !== detected.length) return detected;
-      var hasChanges = detected.some(function (p, i) {
-        return p.id !== prevPortals[i].id || p.target !== prevPortals[i].target;
-      });
-      return hasChanges ? detected : prevPortals;
-    });
-  }, []);
-  return /*#__PURE__*/React.createElement(React.Fragment, null, portalList.map(function (p) {
+  }, [portalsFromStore]);
+  return /*#__PURE__*/React.createElement(React.Fragment, null, portalsList.length && portalsList.map(function (p) {
     return createPortal(p.component, p.target, p.id);
   }));
 });
@@ -594,10 +634,10 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
 /* harmony export */ });
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = ({
-  portalsAdd: function portalsAdd(portal) {
+  portalsAdd: function portalsAdd(portals) {
     return {
       type: 'PORTALS_ADD',
-      payload: portal
+      payload: portals
     };
   }
 });
@@ -657,19 +697,24 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _reducer_main__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./reducer/main */ "./src/common/js/store/reducer/main.js");
 /* harmony import */ var _resolvers_main__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./resolvers/main */ "./src/common/js/store/resolvers/main.js");
 /* harmony import */ var _controls_main__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./controls/main */ "./src/common/js/store/controls/main.js");
-var registerStore = wp.data.registerStore;
+var _wp$data = wp.data,
+  registerStore = _wp$data.registerStore,
+  select = _wp$data.select;
 
 
 
 
 
-registerStore(POETICSOFT_HEART.store_key, {
-  reducer: _reducer_main__WEBPACK_IMPORTED_MODULE_2__["default"],
-  actions: _actions_main__WEBPACK_IMPORTED_MODULE_0__["default"],
-  selectors: _selectors_main__WEBPACK_IMPORTED_MODULE_1__["default"],
-  resolvers: _resolvers_main__WEBPACK_IMPORTED_MODULE_3__["default"],
-  controls: _controls_main__WEBPACK_IMPORTED_MODULE_4__["default"]
-});
+var storeKey = POETICSOFT_HEART.store_key;
+if (!select(storeKey)) {
+  registerStore(POETICSOFT_HEART.store_key, {
+    reducer: _reducer_main__WEBPACK_IMPORTED_MODULE_2__["default"],
+    actions: _actions_main__WEBPACK_IMPORTED_MODULE_0__["default"],
+    selectors: _selectors_main__WEBPACK_IMPORTED_MODULE_1__["default"],
+    resolvers: _resolvers_main__WEBPACK_IMPORTED_MODULE_3__["default"],
+    controls: _controls_main__WEBPACK_IMPORTED_MODULE_4__["default"]
+  });
+}
 
 /***/ },
 
@@ -744,7 +789,9 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (function (draft, action) {
   switch (action.type) {
     case 'PORTALS_ADD':
-      draft.portals.push(action.payload);
+      action.payload.forEach(function (portal) {
+        draft.portals.push(portal);
+      });
       break;
   }
 });

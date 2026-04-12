@@ -34,12 +34,10 @@ class Enqueue
         $url = $this->heart->get_url();
 
         if ($forge) {
-
             $id .= $forge->get_id();
             $path = $forge->get_plugin_path();
             $url = $forge->get_plugin_url();
         } else {
-
             $path = $this->heart->get_path();
             $url = $this->heart->get_url();
         }
@@ -129,14 +127,11 @@ class Enqueue
 
                 $forges = $this->heart->forge->get_forges();
                 foreach ($forges as $forge_id => $forge) {
-
                     if ($forge->get_has_ui_admin()) {
-
                         $this->enqueue('admin', $forge);
                     }
 
                     if ($forge->get_has_ui_block_control()) {
-
                         $this->enqueue('blockcontrol', $forge);
                     }
                 }
@@ -155,9 +150,7 @@ class Enqueue
 
                 $forges = $this->heart->forge->get_forges();
                 foreach ($forges as $forge_id => $forge) {
-
                     if ($forge->get_has_ui_frontend()) {
-
                         $this->enqueue('frontend', $forge);
                     }
                 }

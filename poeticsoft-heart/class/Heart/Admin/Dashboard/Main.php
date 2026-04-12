@@ -5,23 +5,29 @@
 namespace Poeticsoft\Heart\Admin\Dashboard;
 
 use Poeticsoft\Heart\Main as Heart;
-use Poeticsoft\Heart\Admin\Main as Admin;
 use Poeticsoft\Heart\Admin\Dashboard\AI\Main as AI;
+use Poeticsoft\Heart\Admin\Dashboard\Tools\Main as Tools;
 
 class Main
 {
     public $admin;
 
     private $dashboards;
+    public $sections_options;
 
-    public function __construct(Admin $admin)
+    public $title;
+
+    public function __construct($admin)
     {
         $this->admin = $admin;
 
-        $this->dashboards = [
-            new AI($this)
-        ];
+        $this->title = 'DashBoard';
+        $this->sections_options = [];
 
+        $this->dashboards = [
+            new AI($this),
+            new Tools($this)
+        ];
         add_action(
             'wp_dashboard_setup',
             [
@@ -65,11 +71,9 @@ class Main
     {
 
         foreach ($this->dashboards as $dashboard) {
-
             $dashboard_widgets = $dashboard->get_dashboard_widgets();
 
             foreach ($dashboard_widgets as $dashboard) {
-
                 $this->add_dashboard_widget($dashboard);
             }
         }
@@ -77,13 +81,10 @@ class Main
         $forges = $this->admin->heart->forge->get_forges();
 
         foreach ($forges as $forge) {
-
             if ($forge->get_has_dashboard_widgets()) {
-
                 $dashboards = $forge->dashboard->get_dashboard_widgets();
 
                 foreach ($dashboards as $dashboard) {
-
                     $this->add_dashboard_widget($dashboard);
                 }
             }
@@ -114,11 +115,9 @@ class Main
     public function admin_init()
     {
         foreach ($this->dashboards as $dashboard) {
-
             $dashboard_widgets = $dashboard->get_dashboard_widgets();
 
             foreach ($dashboard_widgets as $dashboard) {
-
                 $this->create_section($dashboard);
             }
         }
@@ -126,13 +125,10 @@ class Main
         $forges = $this->admin->heart->forge->get_forges();
 
         foreach ($forges as $forge) {
-
             if ($forge->get_has_dashboard_widgets()) {
-
                 $dashboards = $forge->dashboard->get_dashboard_widgets();
 
                 foreach ($dashboards as $dashboard) {
-
                     $this->create_section($dashboard);
                 }
             }
@@ -151,11 +147,16 @@ class Main
             ||
             !count($dashboard->options)
         ) {
-
             return;
         }
 
         $full_id = $this->get_full_id($dashboard);
+
+        $section_options = [
+            'section_id' => $full_id,
+            'title' => $dashboard->title,
+            'options' => []
+        ];
 
         add_settings_section(
             $full_id,
@@ -169,11 +170,20 @@ class Main
 
         foreach ($dashboard->options as $option) {
 
+            $section_options['options'][] = [
+                'option_name' => $full_id . '_' . $option['key'],
+                'option_title' => $option['title']
+            ];
+
             $this->create_option(
                 $option,
                 $full_id
             );
         }
+
+        $this->sections_options[] = $section_options;
+
+        do_action('poeticsoft_heart_dashboard_created', $this);
     }
 
     // -------------------------------------------------------------------------------
@@ -185,7 +195,6 @@ class Main
 
         $admin_option = get_option($option_name);
         if (!$admin_option) {
-
             update_option($option_name, $option['value']);
         }
 

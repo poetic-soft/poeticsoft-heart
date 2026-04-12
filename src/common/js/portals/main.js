@@ -2,10 +2,7 @@ const { render } = wp.element;
 import Manager from './manager';
 
 const setup = () => {
-    const container = document.createElement('div');
-    container.id = 'poeticsoft-heart-portal-root';
-    container.style.display = 'none';
-    document.body.appendChild(container);
+    const container = document.getElementById('poeticsoft-heart-portal-root');
 
     render(<Manager />, container);
 };

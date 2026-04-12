@@ -26,7 +26,6 @@ class Main
         $this->metabox = new Metabox($this);
 
         if (!$this->create_menu) {
-
             return;
         }
 
@@ -70,7 +69,6 @@ class Main
     public function get_token()
     {
         if (null === $this->token) {
-
             $this->token = wp_create_nonce('wp_rest');
         }
 

@@ -21,6 +21,8 @@
   --s12: calc(var(--space) * 12);
   --s14: calc(var(--space) * 14);
   --s20: calc(var(--space) * 14);
+  --color-grey-a: #ccc;
+  --color-grey-b: #888888;
 }
 
 .postbox .inside .DashboardWidget .Portal .dashboard-options .option-field {
@@ -33,6 +35,27 @@
 }
 .postbox .inside .DashboardWidget .Portal .dashboard-options .option-field button {
   margin-top: var(--s3);
+}
+.postbox .inside .DashboardWidget .Portal .dashboard-sections-options .section > .title {
+  font-weight: bold;
+  padding: 0 0 var(--s025) 0;
+  border: solid 1px;
+  border-width: 0 0 1px 0;
+  color: var(--color-grey-b);
+}
+.postbox .inside .DashboardWidget .Portal .dashboard-sections-options .section .options .option {
+  border: dotted 1px;
+  border-width: 0 0 1px 0;
+  padding: var(--s05) 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s);
+}
+.postbox .inside .DashboardWidget .Portal .dashboard-sections-options .section .options .option .name {
+  font-weight: bold;
+}
+.postbox .inside .DashboardWidget .Portal .dashboard-sections-options .section + .section {
+  margin: var(--s2) 0 0 0;
 }
 
 .Metabox.route .Portal .playmotiv-page-route-wrapper .route-display {

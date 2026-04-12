@@ -2,68 +2,27 @@
 
 namespace Poeticsoft\Heart\AI;
 
+use Poeticsoft\Heart\AI\PromptBuilder;
+
 class Main
 {
-    public $heart;
+    protected static $eventDispatcher;
 
-    protected $prompt;
-    protected $model = null;
-    protected $provider = null;
-    protected $systemInstruction = '';
-    protected $temperature = 0.7;
-    protected $maxTokens = null;
-
-    public function __construct($heart)
+    public static function prompt($message): PromptBuilder
     {
 
-        $this->heart = $heart;
+        return new PromptBuilder($message);
     }
 
-    public function prompt($prompt)
+    public static function setEventDispatcher($dispatcher)
     {
 
-        $this->prompt = $prompt;
-
-        return $this;
+        self::$eventDispatcher = $dispatcher;
     }
 
-    public function usingModel($model): self
+    public static function getEventDispatcher()
     {
 
-        $this->model = $model;
-
-        return $this;
-    }
-
-    public function usingProvider($provider): self
-    {
-
-        $this->provider = $provider;
-
-        return $this;
-    }
-
-    public function usingSystemInstruction($instruction): self
-    {
-
-        $this->systemInstruction = $instruction;
-
-        return $this;
-    }
-
-    public function usingTemperature(float $temp): self
-    {
-
-        $this->temperature = $temp;
-
-        return $this;
-    }
-
-    public function usingMaxTokens(int $tokens): self
-    {
-
-        $this->maxTokens = $tokens;
-
-        return $this;
+        return self::$eventDispatcher;
     }
 }

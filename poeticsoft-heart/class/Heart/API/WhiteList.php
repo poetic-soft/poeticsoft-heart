@@ -46,13 +46,9 @@ class WhiteList
         $namespace = str_replace('-', '/', $this->heart->get_id()); // TO DO Function format namespace
 
         foreach ($whitelists as $version => $sections) {
-
             foreach ($sections as $section => $types) {
-
                 foreach ($types as $type => $paths) {
-
                     foreach ($paths as $path) {
-
                         $item = '/wp-json/' .
                             $namespace .
                             '/' .
@@ -71,9 +67,7 @@ class WhiteList
         $forges = $this->heart->forge->get_forges();
 
         foreach ($forges as $forge) {
-
             if ($forge->get_has_api()) {
-
                 $forge_api = $forge->get_api();
                 $whitelists = $forge_api->get_whitelist();
 
@@ -82,13 +76,9 @@ class WhiteList
                     str_replace('-', '/', $forge->get_id());
 
                 foreach ($whitelists as $version => $sections) {
-
                     foreach ($sections as $section => $types) {
-
                         foreach ($types as $type => $paths) {
-
                             foreach ($paths as $path) {
-
                                 $item = '/wp-json/' .
                                     $namespace .
                                     '/' .
@@ -107,9 +97,7 @@ class WhiteList
         }
 
         foreach ($this->whitelist as $type => $endpoints) {
-
             if (empty($endpoints)) {
-
                 $this->whitelist_compiled[$type] = '/^$/';
 
                 continue;

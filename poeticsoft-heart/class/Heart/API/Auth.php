@@ -28,7 +28,6 @@ class Auth
     {
 
         if (!empty($result)) {
-
             return $result;
         }
 
@@ -37,14 +36,12 @@ class Auth
         // wp_validate_auth_cookie();
 
         if (current_user_can('manage_options')) {
-
             return null;
         };
 
         $pattern = $this->api->whitelist->get_compiled('public');
 
         if (preg_match($pattern, $request_url)) {
-
             return null;
         }
 
@@ -55,7 +52,6 @@ class Auth
             &&
             preg_match($pattern, $request_url)
         ) {
-
             return null;
         }
 

@@ -146,15 +146,11 @@ module.exports = (env) => {
             alias: {
                 assets: path.resolve(destdir + '/assets'),
                 block: path.join(__dirname, pluginname, 'block'),
-                common: path.join(__dirname, 'src', 'common'),
-                adminjs: path.join(__dirname, 'src', 'admin', 'js'),
-                adminscss: path.join(__dirname, 'src', 'admin', 'scss')
+                common: path.join(__dirname, 'src', 'common')
             }
         },
         externals: externals
     };
-
-    console.log(path.join(__dirname, 'src', 'common', 'js', 'components'));
 
     return config;
 };
